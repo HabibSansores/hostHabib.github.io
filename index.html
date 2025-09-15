@@ -1,0 +1,368 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Overlay Ruleta TikTok</title>
+  <style>
+    :root {
+      --bg: rgba(0,0,0,.25);
+      --pill: rgba(0,0,0,.55);
+      --accent: #ffd54f;
+      --dur: 15000ms;
+    }
+    html,body { height:100%; }
+    body {
+      margin:0; font-family: system-ui, Segoe UI, Roboto, Arial;
+      background: var(--bg); color:#fff; overflow:hidden;
+    }
+    #topbar {
+      position: absolute; inset: 12px 12px auto 12px;
+      display:flex; gap:10px; align-items:center;
+      z-index: 100;
+    }
+    .pill {
+      padding: 8px 12px; border-radius: 12px; background: var(--pill);
+      backdrop-filter: blur(6px); font-weight:600;
+    }
+    #status.ok { background: rgba(0,120,60,.6); }
+    #status.err { background: rgba(140,0,0,.6); }
+
+    #wrap {
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      pointer-events:none;
+    }
+    #viewport {
+      width:900px; max-width:95vw; height:180px;
+      border-radius:16px; position:relative; overflow:hidden;
+      background:rgba(20,20,20,.55);
+      outline:2px solid rgba(255,255,255,.08);
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+    }
+    #carril {
+      display:flex; gap:12px; padding:0 24px;
+      transform:translateX(0);
+    }
+    #carril.anim {
+      transition: transform var(--dur) cubic-bezier(.12,.65,.22,1);
+    }
+
+    /* Slots cuadrados con auto-ajuste al texto */
+    .item {
+      display:inline-flex; align-items:center; justify-content:center;
+      padding: 12px 16px;
+      aspect-ratio: 1 / 1;    /* cuadrado */
+      min-width: 110px;       /* crece según texto; alto = ancho */
+      height: auto;           /* lo gobierna el aspect-ratio */
+      border-radius:12px;
+      font-size:20px; font-weight:800; text-align:center;
+      border:1px solid rgba(255,255,255,.12);
+      user-select:none;
+      line-height:1.1;
+    }
+    .item.nada { background:rgba(207,25,25,.7); }
+    .item.casi { background:rgba(224,219,56,.7); color:#000; }
+    .item.win  { background:rgba(16,203,66,.75); }
+
+    #marker {
+      position:absolute; inset:0; pointer-events:none; z-index:5;
+    }
+    #marker::after {
+      content:""; position:absolute; top:-6px; left:50%;
+      transform:translateX(-50%);
+      width:0; height:0;
+      border-left:12px solid transparent;
+      border-right:12px solid transparent;
+      border-top:16px solid var(--accent);
+      filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));
+    }
+
+    #toast {
+      position:absolute; bottom:20px; left:50%;
+      transform:translateX(-50%) translateY(50px);
+      background:rgba(0,0,0,.75);
+      padding:10px 16px; border-radius:10px; opacity:0;
+      transition:transform .35s ease, opacity .35s ease;
+      font-weight:700;
+    }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* Badge fuera del viewport (encima de la flecha) */
+    #gifterBadge {
+      position:absolute;
+      left:50%;
+      top:calc(50% - 180px/2 - 24px); /* justo arriba del viewport (altura 180px) */
+      transform:translateX(-50%);
+      background:rgba(0,0,0,.8);
+      padding:6px 12px; border-radius:10px;
+      font-weight:800; font-size:14px;
+      white-space:nowrap;
+      opacity:0;
+      transition:opacity .3s ease, transform .3s ease;
+      pointer-events:none;
+      z-index:20;
+    }
+    #gifterBadge.show {
+      opacity:1;
+      transform:translateX(-50%) translateY(-4px);
+    }
+
+    /* Botón de prueba visible */
+    #btn { pointer-events:auto; }
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <div id="status" class="pill">WS: conectando…</div>
+    <button id="btn" class="pill">Girar (prueba)</button>
+  </div>
+
+  <div id="wrap">
+    <div id="gifterBadge"></div>
+
+    <div id="viewport">
+      <div id="marker"></div>
+      <div id="carril">
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item win">WIN</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item win">WIN</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+      </div>
+    </div>
+
+    <div id="toast">Premio: —</div>
+  </div>
+
+<script>
+  // ===== CONFIG =====
+  const PROBABILIDADES={nada:1.0,casi:0,win:0}; // edita a gusto
+  const BASE_MS=15000, MS_POR_SLOT=0, COPIAS=15;
+  const CENTER_NUDGE_PX = 0; // ajuste fino al centro visual
+
+  // === Cómo convertir regalos a giros ===
+  const COINS_PER_SPIN = 1;           // 1 giro por cada N coins (para rosas típico N=1)
+  const COUNT_PER_SPIN =1;          // 1 giro por cada 'count' (repetición) reportada
+  const ONLY_ON_STREAK_END = true;  //ue: solo girar cuando msg.streak_end sea true
+
+  // ===== Estado =====
+  let ws=null, spinning=false, pendingSpins=0;
+  const statusEl=document.getElementById('status');
+  const btn=document.getElementById('btn');
+  const viewport=document.getElementById('viewport');
+  const carril=document.getElementById('carril');
+  const toast=document.getElementById('toast');
+  const gifterBadge=document.getElementById('gifterBadge');
+  let baseCount=0,middleBlock=0,currentAbs=0,ITEM_W=150,STEP_W=162;
+  let hideBadgeTimer=null;
+  let CURRENT_TX = 0;
+
+  // ===== Utilidades de layout =====
+  function measureSizes(){
+    const prev=carril.style.transform;
+    carril.classList.remove('anim'); carril.style.transform='translateX(0px)';
+    const items=carril.querySelectorAll('.item');
+    if(items.length>=2){
+      const r1=items[0].getBoundingClientRect();
+      const r2=items[1].getBoundingClientRect();
+      ITEM_W=r1.width; STEP_W=r2.left-r1.left;
+    }
+    requestAnimationFrame(()=>{ carril.style.transform=prev||'translateX(0px)'; });
+  }
+  function setTransform(tx, smooth=false, durMs=BASE_MS){
+    if(smooth){
+      carril.style.setProperty('--dur', `${Math.max(50, Math.round(durMs))}ms`);
+      carril.classList.add('anim');
+    } else {
+      carril.classList.remove('anim');
+    }
+    CURRENT_TX = tx;
+    carril.style.transform = `translateX(${tx}px)`;
+  }
+  function renderTo(absIndex,smooth=true,durMs=BASE_MS){
+    const rect=viewport.getBoundingClientRect();
+    const center=(rect.width/2)-(ITEM_W/2);
+    const tx=-(absIndex*STEP_W)+center;
+    setTransform(tx, smooth, durMs);
+    currentAbs=absIndex;
+  }
+  function mod(n,m){return((n%m)+m)%m;}
+  function recenter(absIndex){
+    const rel=mod(absIndex,baseCount);
+    renderTo(middleBlock*baseCount+rel,false);
+  }
+
+  // ===== Probabilidades corregidas (respetan 0%) =====
+  function getWeightedRandomIndex() {
+    const items = carril.querySelectorAll('.item');
+    const buckets = { nada: [], casi: [], win: [] };
+    for (let i = 0; i < baseCount; i++) {
+      const cls = items[i].classList;
+      const tipo = cls.contains('win') ? 'win' : (cls.contains('casi') ? 'casi' : 'nada');
+      buckets[tipo].push(i);
+    }
+    const ORDER = ['nada','casi','win'];
+    const weights = {}; let sum = 0;
+    for (const k of ORDER) {
+      let w = Math.max(0, Number(PROBABILIDADES[k] ?? 0));
+      if (!buckets[k].length) w = 0;
+      weights[k] = w; sum += w;
+    }
+    if (sum <= 0) {
+      for (const k of ORDER) if (buckets[k].length) {
+        const b=buckets[k]; return b[Math.floor(Math.random()*b.length)];
+      }
+      return 0;
+    }
+    const r=Math.random(); let acc=0;
+    for (const k of ORDER) {
+      acc += weights[k]/sum;
+      if (r < acc && buckets[k].length) {
+        const b=buckets[k]; return b[Math.floor(Math.random()*b.length)];
+      }
+    }
+    for (let i=ORDER.length-1;i>=0;i--){
+      const b=buckets[ORDER[i]]; if (b.length) return b[Math.floor(Math.random()*b.length)];
+    }
+    return 0;
+  }
+
+  // ===== UI helpers =====
+  function showToast(txt,ms=1800){ toast.textContent=txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),ms); }
+  function showBadge(txt){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); gifterBadge.textContent=`🎁 ${txt}`; gifterBadge.classList.add('show'); }
+  function hideBadgeLater(ms=2000){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); hideBadgeTimer=setTimeout(()=>gifterBadge.classList.remove('show'),ms); }
+
+  // Detectar y centrar EXACTO el slot bajo la flecha
+  function getItemUnderMarker(){
+    const rect = viewport.getBoundingClientRect();
+    const x = rect.left + rect.width/2 + CENTER_NUDGE_PX;
+    const y = rect.top + 8;
+    let el = document.elementFromPoint(x, y);
+    while (el && !el.classList?.contains('item')) el = el.parentElement;
+    return el || null;
+  }
+  function snapCenterOnElement(el){
+    if(!el) return;
+    const vp = viewport.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const delta = (er.left + er.width/2) - (vp.left + vp.width/2);
+    setTransform(CURRENT_TX - delta, false);
+  }
+
+  // ===== Giro =====
+  function spinOnce(){
+    if(spinning){pendingSpins++;return;}
+    spinning=true;
+
+    const idxRel=getWeightedRandomIndex();
+    const vueltas=2+Math.floor(Math.random()*2);
+    const pasos=vueltas*baseCount+idxRel;
+    const durMs=BASE_MS+pasos*MS_POR_SLOT;
+    const targetAbs=currentAbs+pasos;
+
+    renderTo(targetAbs,true,durMs);
+
+    const onEnd=()=>{
+      carril.removeEventListener('transitionend',onEnd);
+      recenter(targetAbs);
+      const elCentro = getItemUnderMarker();
+      snapCenterOnElement(elCentro);
+      const premio = elCentro ? elCentro.innerText.trim().replace(/\s+/g,' ') : '(?)';
+      showToast('Premio: '+premio);
+      hideBadgeLater(2000);
+      if(pendingSpins>0){pendingSpins--;setTimeout(()=>{spinning=false;spinOnce();},400);}
+      else spinning=false;
+    };
+    carril.addEventListener('transitionend',onEnd,{once:true});
+  }
+
+  // ===== Cola de giros =====
+  function queueSpins(n, user){
+    n = Math.max(0, Math.floor(n||0));
+    if (!n) return;
+    showBadge(user || 'Anónimo');
+    pendingSpins += n;
+    if (!spinning) spinOnce();
+  }
+
+  // ===== Convertir mensajes gift → cantidad de giros =====
+  function spinsFromGift(msg){
+    // Campos posibles según tu emisor:
+    // msg.count, msg.repeat_count, msg.quantity  => repeticiones en esta notificación
+    // msg.coins, msg.diamonds                    => monedas totales de esta notificación
+    // msg.streak, msg.streak_end (bool)          => racha y fin de racha
+    const count = Number(msg.count ?? msg.repeat_count ?? msg.quantity ?? 0);
+    const coins = Number(msg.coins ?? msg.diamonds ?? 0);
+    const isStreakEnd = Boolean(msg.streak_end || msg.streakEnd);
+
+    // Si solo quieres girar al cerrar la racha:
+    if (ONLY_ON_STREAK_END && ('streak_end' in msg || 'streakEnd' in msg)) {
+      if (!isStreakEnd) return 0; // aún no termina la racha, no giramos
+    }
+
+    let spins = 0;
+
+    // 1) Repeticiones reportadas (por ejemplo, 2 rosas en la racha)
+    if (count > 0) spins += count * COUNT_PER_SPIN;
+
+    // 2) Monedas (diamantes). Útil si tu emisor manda el total en coins.
+    if (COINS_PER_SPIN > 0 && coins > 0) {
+      spins += Math.floor(coins / COINS_PER_SPIN);
+    }
+
+    // 3) Fallback: al menos 1 giro si no vino ningún dato (y no estás esperando a streak_end)
+    if (spins === 0 && !ONLY_ON_STREAK_END) spins = 0;
+
+    return spins;
+  }
+
+  // ===== Init =====
+  (function init(){
+    const baseHTML=carril.innerHTML;
+    baseCount=carril.children.length;
+    for(let i=1;i<COPIAS;i++) carril.insertAdjacentHTML('beforeend',baseHTML);
+    middleBlock=Math.floor(COPIAS/2);
+    measureSizes();
+    currentAbs=middleBlock*baseCount+Math.floor(baseCount/2);
+    renderTo(currentAbs,false);
+    window.addEventListener('resize',()=>{measureSizes();renderTo(currentAbs,false);});
+  })();
+
+  // Botón de prueba (visible)
+//btn.addEventListener('click',()=>{
+    showBadge('Tester');
+    queueSpins(1,'Tester'); // prueba: simula 2 giros
+//});
+
+  // ===== WebSocket (tu run_live_ws.py) =====
+  function openWS(){
+    try{ws=new WebSocket('ws://localhost:8765');}
+    catch(e){statusEl.textContent='WS: error URL';statusEl.classList.add('err');return;}
+    ws.onopen=()=>{statusEl.textContent='WS: conectado';statusEl.classList.add('ok');};
+    ws.onclose=()=>{statusEl.textContent='WS: desconectado';statusEl.classList.remove('ok');setTimeout(openWS,1000);};
+    ws.onerror=()=>{statusEl.textContent='WS: error';statusEl.classList.add('err');};
+    ws.onmessage=ev=>{
+      try{
+        const msg=JSON.parse(ev.data);
+        if(msg.type==='gift'){
+          const spins = spinsFromGift(msg);
+          if (spins > 0) queueSpins(spins, msg.user);
+        }
+      }catch{}
+    };
+  }
+  openWS();
+</script>
+</body>
+</html>
