@@ -151,13 +151,21 @@
   const BASE_MS=15000, MS_POR_SLOT=0, COPIAS=15;
   const CENTER_NUDGE_PX = 0; // ajuste fino al centro visual
 
-  // === Cómo convertir regalos a giros ===
-  const COINS_PER_SPIN = 1;           // 1 giro por cada N coins (para rosas típico N=1)
-  const COUNT_PER_SPIN =1;          // 1 giro por cada 'count' (repetición) reportada
-  const ONLY_ON_STREAK_END = true;  //ue: solo girar cuando msg.streak_end sea true
+  // === Reglas de conversión a giros ===
+  const COINS_PER_SPIN = 1;          // 1 giro por cada N coins
+  const COUNT_PER_SPIN = 0;          // 0 para NO sumar por count si ya tienes coins
+  const ONLY_ON_STREAK_END = true;   // true: solo contar al final de la racha
+
+  // Si tu emisor NO manda coins, mapea valores por nombre:
+  const GIFT_VALUES = {
+    "rose": 1, "rosa": 1, "la rosa": 1,
+    // agrega más si quieres: "finger heart": 5, ...
+  };
 
   // ===== Estado =====
-  let ws=null, spinning=false, pendingSpins=0;
+  let ws=null, spinning=false;
+  let pendingSpins=0;           // cuántos giros quedan
+  let spinQueue=[];             // cola de nombres por CADA giro: ["user","user",...]
   const statusEl=document.getElementById('status');
   const btn=document.getElementById('btn');
   const viewport=document.getElementById('viewport');
@@ -239,9 +247,9 @@
   }
 
   // ===== UI helpers =====
-  function showToast(txt,ms=1800){ toast.textContent=txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),ms); }
+  function showToast(txt,ms=1200){ toast.textContent=txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),ms); }
   function showBadge(txt){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); gifterBadge.textContent=`🎁 ${txt}`; gifterBadge.classList.add('show'); }
-  function hideBadgeLater(ms=2000){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); hideBadgeTimer=setTimeout(()=>gifterBadge.classList.remove('show'),ms); }
+  function hideBadgeLater(ms=800){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); hideBadgeTimer=setTimeout(()=>gifterBadge.classList.remove('show'),ms); }
 
   // Detectar y centrar EXACTO el slot bajo la flecha
   function getItemUnderMarker(){
@@ -262,8 +270,15 @@
 
   // ===== Giro =====
   function spinOnce(){
-    if(spinning){pendingSpins++;return;}
+    if(spinning){return;}
     spinning=true;
+
+    // Tomamos un nombre de la cola para este giro
+    const currentSpinner = spinQueue.shift() || 'Anónimo';
+    pendingSpins = Math.max(0, pendingSpins - 1);
+
+    // Mostrar el nombre en CADA giro
+    showBadge(currentSpinner);
 
     const idxRel=getWeightedRandomIndex();
     const vueltas=2+Math.floor(Math.random()*2);
@@ -280,9 +295,13 @@
       snapCenterOnElement(elCentro);
       const premio = elCentro ? elCentro.innerText.trim().replace(/\s+/g,' ') : '(?)';
       showToast('Premio: '+premio);
-      hideBadgeLater(2000);
-      if(pendingSpins>0){pendingSpins--;setTimeout(()=>{spinning=false;spinOnce();},400);}
-      else spinning=false;
+      hideBadgeLater(600);
+
+      spinning=false;
+      // Si aún quedan giros en la cola, continúa automáticamente
+      if (pendingSpins > 0) {
+        setTimeout(spinOnce, 300);
+      }
     };
     carril.addEventListener('transitionend',onEnd,{once:true});
   }
@@ -291,40 +310,69 @@
   function queueSpins(n, user){
     n = Math.max(0, Math.floor(n||0));
     if (!n) return;
-    showBadge(user || 'Anónimo');
+    const name = user || 'Anónimo';
+    // Encola el nombre N veces (un nombre por cada giro)
+    for (let i=0;i<n;i++) spinQueue.push(name);
     pendingSpins += n;
+    // Si no se está girando, disparar el primero
     if (!spinning) spinOnce();
   }
 
-  // ===== Convertir mensajes gift → cantidad de giros =====
-  function spinsFromGift(msg){
-    // Campos posibles según tu emisor:
-    // msg.count, msg.repeat_count, msg.quantity  => repeticiones en esta notificación
-    // msg.coins, msg.diamonds                    => monedas totales de esta notificación
-    // msg.streak, msg.streak_end (bool)          => racha y fin de racha
-    const count = Number(msg.count ?? msg.repeat_count ?? msg.quantity ?? 0);
-    const coins = Number(msg.coins ?? msg.diamonds ?? 0);
-    const isStreakEnd = Boolean(msg.streak_end || msg.streakEnd);
+  // ===== Utilidades gifts =====
+  function inferCoinsFromName(name, count=1) {
+    if (!name) return 0;
+    const key = String(name).toLowerCase();
+    const per = GIFT_VALUES[key] || 0;
+    return per * Math.max(1, count);
+  }
 
-    // Si solo quieres girar al cerrar la racha:
-    if (ONLY_ON_STREAK_END && ('streak_end' in msg || 'streakEnd' in msg)) {
-      if (!isStreakEnd) return 0; // aún no termina la racha, no giramos
+  // ===== Convertir mensaje gift → giros (sin doble conteo) =====
+  function spinsFromGift(msg){
+    const name = (msg.gift ?? msg.gift_name ?? msg.giftName ?? "").toString();
+    const count = Number(
+      msg.count ?? msg.repeat_count ?? msg.repeatCount ??
+      msg.quantity ?? msg.combo_count ?? 0
+    );
+
+    // Preferimos coins si existen; si no, inferimos por nombre*count
+    let coins = Number(
+      msg.coins ?? msg.diamonds ?? msg.coin ?? msg.value ?? NaN
+    );
+    if (!isFinite(coins) || coins < 0) coins = NaN;
+
+    const hasStreakFlag = (
+      'streak_end' in msg || 'streakEnd' in msg ||
+      'repeat_end' in msg || 'repeatEnd' in msg ||
+      'combo_end'  in msg || 'comboEnd' in msg ||
+      'is_completed' in msg || 'isCompleted' in msg
+    );
+    const isStreakEnd = Boolean(
+      msg.streak_end ?? msg.streakEnd ?? msg.repeat_end ?? msg.repeatEnd ??
+      msg.combo_end  ?? msg.comboEnd  ?? msg.is_completed ?? msg.isCompleted ?? false
+    );
+
+    if (ONLY_ON_STREAK_END && hasStreakFlag && !isStreakEnd) {
+      return 0; // esperamos al final para no contar doble
     }
 
     let spins = 0;
 
-    // 1) Repeticiones reportadas (por ejemplo, 2 rosas en la racha)
-    if (count > 0) spins += count * COUNT_PER_SPIN;
-
-    // 2) Monedas (diamantes). Útil si tu emisor manda el total en coins.
-    if (COINS_PER_SPIN > 0 && coins > 0) {
-      spins += Math.floor(coins / COINS_PER_SPIN);
+    if (isFinite(coins)) {
+      // Caso A: tenemos coins explícitas ⇒ 1 giro por coin (o por COINS_PER_SPIN)
+      spins = Math.floor(coins / COINS_PER_SPIN);
+    } else {
+      // Caso B: no hay coins; intentamos inferir por nombre*count
+      const inferred = inferCoinsFromName(name, Math.max(1, count || 1));
+      if (inferred > 0) {
+        spins = Math.floor(inferred / COINS_PER_SPIN);
+      } else if (COUNT_PER_SPIN > 0 && count > 0) {
+        // último recurso si quieres basarte en count
+        spins = count * COUNT_PER_SPIN;
+      }
     }
 
-    // 3) Fallback: al menos 1 giro si no vino ningún dato (y no estás esperando a streak_end)
-    if (spins === 0 && !ONLY_ON_STREAK_END) spins = 0;
-
-    return spins;
+    // Sin datos válidos ⇒ 0 (evita giros fantasma)
+    return Math.max(0, Math.floor(spins || 0));
   }
 
   // ===== Init =====
@@ -339,13 +387,13 @@
     window.addEventListener('resize',()=>{measureSizes();renderTo(currentAbs,false);});
   })();
 
-  // Botón de prueba (visible)
-//btn.addEventListener('click',()=>{
-    showBadge('Tester');
-    queueSpins(1,'Tester'); // prueba: simula 2 giros
-//});
+  // Botón de prueba (exactamente 1 giro)
+  btn.addEventListener('click', () => {
+    if (spinning || pendingSpins > 0) return; // evita dobles
+    queueSpins(1, 'Tester');
+  });
 
-  // ===== WebSocket (tu run_live_ws.py) =====
+  // ===== WebSocket =====
   function openWS(){
     try{ws=new WebSocket('ws://localhost:8765');}
     catch(e){statusEl.textContent='WS: error URL';statusEl.classList.add('err');return;}
@@ -356,6 +404,7 @@
       try{
         const msg=JSON.parse(ev.data);
         if(msg.type==='gift'){
+          // console.debug('[GIFT]', msg); // descomenta para ver el payload real
           const spins = spinsFromGift(msg);
           if (spins > 0) queueSpins(spins, msg.user);
         }
