@@ -15,6 +15,8 @@
       margin:0; font-family: system-ui, Segoe UI, Roboto, Arial;
       background: var(--bg); color:#fff; overflow:hidden;
     }
+
+    /* ===== Topbar (puedes ocultarlo en producción) ===== */
     #topbar {
       position: absolute; inset: 12px 12px auto 12px;
       display:flex; gap:10px; align-items:center;
@@ -26,12 +28,20 @@
     }
     #status.ok { background: rgba(0,120,60,.6); }
     #status.err { background: rgba(140,0,0,.6); }
+    #btn { pointer-events:auto; }
 
-    #wrap {
+    /* ===== Overlay contenedor (ahora con show/hide) ===== */
+    #overlay {
       position:absolute; inset:0;
       display:flex; align-items:center; justify-content:center;
       pointer-events:none;
+      opacity: 0; transform: scale(.95);
+      transition: opacity .35s ease, transform .35s ease;
     }
+    #overlay.visible {
+      opacity: 1; transform: scale(1);
+    }
+
     #viewport {
       width:900px; max-width:95vw; height:180px;
       border-radius:16px; position:relative; overflow:hidden;
@@ -102,13 +112,7 @@
       pointer-events:none;
       z-index:20;
     }
-    #gifterBadge.show {
-      opacity:1;
-      transform:translateX(-50%) translateY(-4px);
-    }
-
-    /* Botón de prueba visible */
-    #btn { pointer-events:auto; }
+    #gifterBadge.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
   </style>
 </head>
 <body>
@@ -117,7 +121,8 @@
     <button id="btn" class="pill">Girar (prueba)</button>
   </div>
 
-  <div id="wrap">
+  <!-- Overlay AHORA oculto por defecto -->
+  <div id="overlay">
     <div id="gifterBadge"></div>
 
     <div id="viewport">
@@ -125,25 +130,6 @@
       <div id="carril">
         <div class="item nada">Nada</div>
         <div class="item nada">Nada</div>
-        <div class="item casi">Casi</div>
-        <div class="item nada">Nada</div>
-        <div class="item nada">Nada</div>
-        <div class="item nada">Nada</div>
-        <div class="item nada">Nada</div>
-        <div class="item nada">Nada</div>
-        <div class="item casi">Casi</div>
-        <div class="item casi">Casi</div>
-        <div class="item casi">Casi</div>
-        <div class="item casi">Casi</div>
-        <div class="item casi">Casi</div>
-        <div class="item nada">Nada</div>
-        <div class="item nada">Nada</div>
-        <div class="item casi">Casi</div>
-        <div class="item nada">Nada</div>
-        <div class="item nada">Nada</div>
-        <div class="item nada">Nada</div>
-        <div class="item nada">Nada</div>
-        <div class="item casi">Casi</div>
         <div class="item nada">Nada</div>
         <div class="item casi">Casi</div>
         <div class="item casi">Casi</div>
@@ -153,8 +139,21 @@
         <div class="item casi">Casi</div>
         <div class="item nada">Nada</div>
         <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        }<div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
         <div class="item nada">Nada</div>
         <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
       </div>
     </div>
 
@@ -171,26 +170,37 @@
   const COINS_PER_SPIN = 1;          // 1 giro por cada N coins
   const COUNT_PER_SPIN = 0;          // 0 para NO sumar por count si ya tienes coins
   const ONLY_ON_STREAK_END = true;   // true: solo contar al final de la racha
+  const AUTOHIDE_DELAY_MS = 1200;    // tiempo tras el último giro para ocultar overlay
 
-  // Si tu emisor NO manda coins, mapea valores por nombre:
-  const GIFT_VALUES = {
-    "rose": 1, "rosa": 1, "la rosa": 1,
-    // agrega más si quieres: "finger heart": 5, ...
-  };
+  const GIFT_VALUES = { "rose":1, "rosa":1, "la rosa":1 };
 
   // ===== Estado =====
   let ws=null, spinning=false;
   let pendingSpins=0;           // cuántos giros quedan
-  let spinQueue=[];             // cola de nombres por CADA giro: ["user","user",...]
+  let spinQueue=[];             // cola de nombres por giro: ["user","user",...]
   const statusEl=document.getElementById('status');
   const btn=document.getElementById('btn');
+  const overlay=document.getElementById('overlay');
   const viewport=document.getElementById('viewport');
   const carril=document.getElementById('carril');
   const toast=document.getElementById('toast');
   const gifterBadge=document.getElementById('gifterBadge');
   let baseCount=0,middleBlock=0,currentAbs=0,ITEM_W=150,STEP_W=162;
-  let hideBadgeTimer=null;
+  let hideBadgeTimer=null, hideOverlayTimer=null;
   let CURRENT_TX = 0;
+
+  // ===== Mostrar/ocultar overlay =====
+  function showOverlay() {
+    if (hideOverlayTimer) { clearTimeout(hideOverlayTimer); hideOverlayTimer = null; }
+    overlay.classList.add('visible');
+  }
+  function hideOverlayLater(ms=AUTOHIDE_DELAY_MS) {
+    if (hideOverlayTimer) clearTimeout(hideOverlayTimer);
+    hideOverlayTimer = setTimeout(() => {
+      // Solo ocultar si ya no hay giros ni está girando
+      if (!spinning && pendingSpins === 0) overlay.classList.remove('visible');
+    }, ms);
+  }
 
   // ===== Utilidades de layout =====
   function measureSizes(){
@@ -227,7 +237,7 @@
     renderTo(middleBlock*baseCount+rel,false);
   }
 
-  // ===== Probabilidades corregidas (respetan 0%) =====
+  // ===== Probabilidades corregidas =====
   function getWeightedRandomIndex() {
     const items = carril.querySelectorAll('.item');
     const buckets = { nada: [], casi: [], win: [] };
@@ -289,6 +299,9 @@
     if(spinning){return;}
     spinning=true;
 
+    // Hacer visible el overlay mientras gira
+    showOverlay();
+
     // Tomamos un nombre de la cola para este giro
     const currentSpinner = spinQueue.shift() || 'Anónimo';
     pendingSpins = Math.max(0, pendingSpins - 1);
@@ -317,6 +330,9 @@
       // Si aún quedan giros en la cola, continúa automáticamente
       if (pendingSpins > 0) {
         setTimeout(spinOnce, 300);
+      } else {
+        // No hay más giros: ocultar overlay tras un momento
+        hideOverlayLater(AUTOHIDE_DELAY_MS);
       }
     };
     carril.addEventListener('transitionend',onEnd,{once:true});
@@ -330,6 +346,8 @@
     // Encola el nombre N veces (un nombre por cada giro)
     for (let i=0;i<n;i++) spinQueue.push(name);
     pendingSpins += n;
+    // Mostrar overlay en cuanto haya trabajo
+    showOverlay();
     // Si no se está girando, disparar el primero
     if (!spinning) spinOnce();
   }
@@ -400,6 +418,10 @@
     measureSizes();
     currentAbs=middleBlock*baseCount+Math.floor(baseCount/2);
     renderTo(currentAbs,false);
+
+    // Overlay oculto al inicio
+    overlay.classList.remove('visible');
+
     window.addEventListener('resize',()=>{measureSizes();renderTo(currentAbs,false);});
   })();
 
@@ -411,7 +433,7 @@
 
   // ===== WebSocket =====
   function openWS(){
-    try{ws=new WebSocket('ws://127.0.0.1:8765');}
+    try{ws=new WebSocket('ws://127.0.0.1:8765');} // <- sin espacio
     catch(e){statusEl.textContent='WS: error URL';statusEl.classList.add('err');return;}
     ws.onopen=()=>{statusEl.textContent='WS: conectado';statusEl.classList.add('ok');};
     ws.onclose=()=>{statusEl.textContent='WS: desconectado';statusEl.classList.remove('ok');setTimeout(openWS,1000);};
@@ -420,7 +442,6 @@
       try{
         const msg=JSON.parse(ev.data);
         if(msg.type==='gift'){
-          // console.debug('[GIFT]', msg); // descomenta para ver el payload real
           const spins = spinsFromGift(msg);
           if (spins > 0) queueSpins(spins, msg.user);
         }
@@ -431,8 +452,3 @@
 </script>
 </body>
 </html>
-
-
-
-
-
