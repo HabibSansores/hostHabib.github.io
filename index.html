@@ -16,7 +16,7 @@
       background: var(--bg); color:#fff; overflow:hidden;
     }
 
-    /* ===== Topbar (puedes ocultarlo en producción) ===== */
+    /* ===== Topbar (ocúltalo si no lo necesitas) ===== */
     #topbar {
       position: absolute; inset: 12px 12px auto 12px;
       display:flex; gap:10px; align-items:center;
@@ -30,7 +30,7 @@
     #status.err { background: rgba(140,0,0,.6); }
     #btn { pointer-events:auto; }
 
-    /* ===== Overlay contenedor (ahora con show/hide) ===== */
+    /* ===== Overlay contenedor (show/hide real) ===== */
     #overlay {
       position:absolute; inset:0;
       display:flex; align-items:center; justify-content:center;
@@ -38,9 +38,8 @@
       opacity: 0; transform: scale(.95);
       transition: opacity .35s ease, transform .35s ease;
     }
-    #overlay.visible {
-      opacity: 1; transform: scale(1);
-    }
+    #overlay.visible { opacity: 1; transform: scale(1); }
+    #overlay.hidden  { display: none; } /* oculto real para OBS/Live Studio */
 
     #viewport {
       width:900px; max-width:95vw; height:180px;
@@ -97,11 +96,11 @@
     }
     #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-    /* Badge fuera del viewport (encima de la flecha) */
+    /* Badge (encima del viewport, bajo la flecha) */
     #gifterBadge {
       position:absolute;
       left:50%;
-      top:calc(50% - 180px/2 - 24px); /* justo arriba del viewport (altura 180px) */
+      top:calc(50% - 180px/2 - 24px);
       transform:translateX(-50%);
       background:rgba(0,0,0,.8);
       padding:6px 12px; border-radius:10px;
@@ -121,8 +120,8 @@
     <button id="btn" class="pill">Girar (prueba)</button>
   </div>
 
-  <!-- Overlay AHORA oculto por defecto -->
-  <div id="overlay">
+  <!-- Overlay oculto por defecto -->
+  <div id="overlay" class="hidden">
     <div id="gifterBadge"></div>
 
     <div id="viewport">
@@ -139,8 +138,23 @@
         <div class="item casi">Casi</div>
         <div class="item nada">Nada</div>
         <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
         <div class="item casi">Casi</div>
-        }<div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item win">WIN</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
         <div class="item casi">Casi</div>
         <div class="item casi">Casi</div>
         <div class="item casi">Casi</div>
@@ -148,12 +162,20 @@
         <div class="item nada">Nada</div>
         <div class="item nada">Nada</div>
         <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
         <div class="item nada">Nada</div>
         <div class="item nada">Nada</div>
         <div class="item nada">Nada</div>
         <div class="item casi">Casi</div>
         <div class="item casi">Casi</div>
         <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        
       </div>
     </div>
 
@@ -164,20 +186,23 @@
   // ===== CONFIG =====
   const PROBABILIDADES={nada:1.0,casi:0,win:0}; // edita a gusto
   const BASE_MS=15000, MS_POR_SLOT=0, COPIAS=15;
-  const CENTER_NUDGE_PX = 0; // ajuste fino al centro visual
+  const CENTER_NUDGE_PX = 0;
 
-  // === Reglas de conversión a giros ===
-  const COINS_PER_SPIN = 1;          // 1 giro por cada N coins
-  const COUNT_PER_SPIN = 0;          // 0 para NO sumar por count si ya tienes coins
-  const ONLY_ON_STREAK_END = true;   // true: solo contar al final de la racha
-  const AUTOHIDE_DELAY_MS = 1200;    // tiempo tras el último giro para ocultar overlay
+  // Reglas de conversión a giros
+  const COINS_PER_SPIN = 1;          // 1 giro por N coins
+  const COUNT_PER_SPIN = 0;          // 0 si ya usas coins (evita doble conteo)
+  const ONLY_ON_STREAK_END = true;   // contar sólo al finalizar la racha
+
+  // Aparición/desaparición
+  const AUTOHIDE_DELAY_MS = 1200;    // tras el último giro
+  const INACTIVITY_TIMEOUT_MS = 5000;// si se mostró pero no arrancó
 
   const GIFT_VALUES = { "rose":1, "rosa":1, "la rosa":1 };
 
   // ===== Estado =====
   let ws=null, spinning=false;
-  let pendingSpins=0;           // cuántos giros quedan
-  let spinQueue=[];             // cola de nombres por giro: ["user","user",...]
+  let pendingSpins=0;
+  let spinQueue=[];
   const statusEl=document.getElementById('status');
   const btn=document.getElementById('btn');
   const overlay=document.getElementById('overlay');
@@ -186,20 +211,43 @@
   const toast=document.getElementById('toast');
   const gifterBadge=document.getElementById('gifterBadge');
   let baseCount=0,middleBlock=0,currentAbs=0,ITEM_W=150,STEP_W=162;
-  let hideBadgeTimer=null, hideOverlayTimer=null;
+  let hideBadgeTimer=null, hideOverlayTimer=null, inactivityTimer=null;
   let CURRENT_TX = 0;
 
   // ===== Mostrar/ocultar overlay =====
   function showOverlay() {
     if (hideOverlayTimer) { clearTimeout(hideOverlayTimer); hideOverlayTimer = null; }
-    overlay.classList.add('visible');
+    if (inactivityTimer)   { clearTimeout(inactivityTimer); inactivityTimer = null; }
+    overlay.classList.remove('hidden');      // display:block
+    overlay.getBoundingClientRect();         // reflow para que el fade funcione
+    overlay.classList.add('visible');        // fade-in
   }
-  function hideOverlayLater(ms=AUTOHIDE_DELAY_MS) {
+  function hideOverlayLater(ms = AUTOHIDE_DELAY_MS) {
     if (hideOverlayTimer) clearTimeout(hideOverlayTimer);
     hideOverlayTimer = setTimeout(() => {
-      // Solo ocultar si ya no hay giros ni está girando
-      if (!spinning && pendingSpins === 0) overlay.classList.remove('visible');
+      if (!spinning && pendingSpins === 0) {
+        overlay.classList.remove('visible'); // inicia fade-out
+      }
     }, ms);
+  }
+  // Cuando termina el fade, ocultar de verdad
+  overlay.addEventListener('transitionend', (ev) => {
+    if (ev.target !== overlay) return;
+    if (!overlay.classList.contains('visible')) {
+      overlay.classList.add('hidden');       // display:none
+    }
+  });
+
+  function armInactivityAutoHide() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      if (!spinning && pendingSpins === 0) {
+        overlay.classList.remove('visible'); // fade-out
+      }
+    }, INACTIVITY_TIMEOUT_MS);
+  }
+  function cancelInactivityAutoHide() {
+    if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
   }
 
   // ===== Utilidades de layout =====
@@ -237,7 +285,7 @@
     renderTo(middleBlock*baseCount+rel,false);
   }
 
-  // ===== Probabilidades corregidas =====
+  // ===== Probabilidades =====
   function getWeightedRandomIndex() {
     const items = carril.querySelectorAll('.item');
     const buckets = { nada: [], casi: [], win: [] };
@@ -277,7 +325,6 @@
   function showBadge(txt){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); gifterBadge.textContent=`🎁 ${txt}`; gifterBadge.classList.add('show'); }
   function hideBadgeLater(ms=800){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); hideBadgeTimer=setTimeout(()=>gifterBadge.classList.remove('show'),ms); }
 
-  // Detectar y centrar EXACTO el slot bajo la flecha
   function getItemUnderMarker(){
     const rect = viewport.getBoundingClientRect();
     const x = rect.left + rect.width/2 + CENTER_NUDGE_PX;
@@ -299,14 +346,11 @@
     if(spinning){return;}
     spinning=true;
 
-    // Hacer visible el overlay mientras gira
+    cancelInactivityAutoHide();
     showOverlay();
 
-    // Tomamos un nombre de la cola para este giro
     const currentSpinner = spinQueue.shift() || 'Anónimo';
     pendingSpins = Math.max(0, pendingSpins - 1);
-
-    // Mostrar el nombre en CADA giro
     showBadge(currentSpinner);
 
     const idxRel=getWeightedRandomIndex();
@@ -327,11 +371,9 @@
       hideBadgeLater(600);
 
       spinning=false;
-      // Si aún quedan giros en la cola, continúa automáticamente
       if (pendingSpins > 0) {
         setTimeout(spinOnce, 300);
       } else {
-        // No hay más giros: ocultar overlay tras un momento
         hideOverlayLater(AUTOHIDE_DELAY_MS);
       }
     };
@@ -343,32 +385,30 @@
     n = Math.max(0, Math.floor(n||0));
     if (!n) return;
     const name = user || 'Anónimo';
-    // Encola el nombre N veces (un nombre por cada giro)
     for (let i=0;i<n;i++) spinQueue.push(name);
     pendingSpins += n;
-    // Mostrar overlay en cuanto haya trabajo
+
     showOverlay();
-    // Si no se está girando, disparar el primero
-    if (!spinning) spinOnce();
+    if (!spinning) {
+      // Si por alguna razón no inicia, ocúltalo por inactividad
+      armInactivityAutoHide();
+      spinOnce();
+    }
   }
 
-  // ===== Utilidades gifts =====
+  // ===== Gifts → giros =====
   function inferCoinsFromName(name, count=1) {
     if (!name) return 0;
     const key = String(name).toLowerCase();
     const per = GIFT_VALUES[key] || 0;
     return per * Math.max(1, count);
   }
-
-  // ===== Convertir mensaje gift → giros (sin doble conteo) =====
   function spinsFromGift(msg){
     const name = (msg.gift ?? msg.gift_name ?? msg.giftName ?? "").toString();
     const count = Number(
       msg.count ?? msg.repeat_count ?? msg.repeatCount ??
       msg.quantity ?? msg.combo_count ?? 0
     );
-
-    // Preferimos coins si existen; si no, inferimos por nombre*count
     let coins = Number(
       msg.coins ?? msg.diamonds ?? msg.coin ?? msg.value ?? NaN
     );
@@ -384,28 +424,19 @@
       msg.streak_end ?? msg.streakEnd ?? msg.repeat_end ?? msg.repeatEnd ??
       msg.combo_end  ?? msg.comboEnd  ?? msg.is_completed ?? msg.isCompleted ?? false
     );
-
-    if (ONLY_ON_STREAK_END && hasStreakFlag && !isStreakEnd) {
-      return 0; // esperamos al final para no contar doble
-    }
+    if (ONLY_ON_STREAK_END && hasStreakFlag && !isStreakEnd) return 0;
 
     let spins = 0;
-
     if (isFinite(coins)) {
-      // Caso A: tenemos coins explícitas ⇒ 1 giro por coin (o por COINS_PER_SPIN)
       spins = Math.floor(coins / COINS_PER_SPIN);
     } else {
-      // Caso B: no hay coins; intentamos inferir por nombre*count
       const inferred = inferCoinsFromName(name, Math.max(1, count || 1));
       if (inferred > 0) {
         spins = Math.floor(inferred / COINS_PER_SPIN);
       } else if (COUNT_PER_SPIN > 0 && count > 0) {
-        // último recurso si quieres basarte en count
         spins = count * COUNT_PER_SPIN;
       }
     }
-
-    // Sin datos válidos ⇒ 0 (evita giros fantasma)
     return Math.max(0, Math.floor(spins || 0));
   }
 
@@ -419,21 +450,21 @@
     currentAbs=middleBlock*baseCount+Math.floor(baseCount/2);
     renderTo(currentAbs,false);
 
-    // Overlay oculto al inicio
     overlay.classList.remove('visible');
+    overlay.classList.add('hidden');
 
     window.addEventListener('resize',()=>{measureSizes();renderTo(currentAbs,false);});
   })();
 
   // Botón de prueba (exactamente 1 giro)
   btn.addEventListener('click', () => {
-    if (spinning || pendingSpins > 0) return; // evita dobles
+    if (spinning || pendingSpins > 0) return;
     queueSpins(1, 'Tester');
   });
 
   // ===== WebSocket =====
   function openWS(){
-    try{ws=new WebSocket('ws://127.0.0.1:8765');} // <- sin espacio
+    try{ws=new WebSocket('ws://127.0.0.1:8765');} // ajusta a tu host/túnel
     catch(e){statusEl.textContent='WS: error URL';statusEl.classList.add('err');return;}
     ws.onopen=()=>{statusEl.textContent='WS: conectado';statusEl.classList.add('ok');};
     ws.onclose=()=>{statusEl.textContent='WS: desconectado';statusEl.classList.remove('ok');setTimeout(openWS,1000);};
