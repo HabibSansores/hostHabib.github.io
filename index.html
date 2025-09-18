@@ -411,7 +411,7 @@
 
   // ===== WebSocket =====
   function openWS(){
-    try{ws=new WebSocket('ws://127.0.0.1:8765');}
+    try{ws=new WebSocket('ws://10.64.134.247:8765');}
     catch(e){statusEl.textContent='WS: error URL';statusEl.classList.add('err');return;}
     ws.onopen=()=>{statusEl.textContent='WS: conectado';statusEl.classList.add('ok');};
     ws.onclose=()=>{statusEl.textContent='WS: desconectado';statusEl.classList.remove('ok');setTimeout(openWS,1000);};
@@ -431,6 +431,7 @@
 </script>
 </body>
 </html>
+
 
 
 
