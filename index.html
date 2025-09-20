@@ -111,13 +111,14 @@
 
 <script>
   // ===== CONFIG =====
-  const PROBABILIDADES={nada:1.0,casi:0,win:0};
+  const PROBABILIDADES={nada:1.0,casi:0,win:0}; // ajusta si quieres otras probabilidades
   const BASE_MS=15000, MS_POR_SLOT=0, COPIAS=15;
   const CENTER_NUDGE_PX = 0;
 
   const COINS_PER_SPIN = 10;   // 30 monedas = 1 giro
   const COUNT_PER_SPIN = 0;
-  const ONLY_ON_STREAK_END = true; // no exigir fin de racha
+  // ✅ Contar solo cuando finaliza la racha (evita giros dobles)
+  const ONLY_ON_STREAK_END = true;
 
   // Variantes de rosquilla
   const GIFT_VALUES = {
@@ -216,7 +217,7 @@
     setTransform(CURRENT_TX - delta, false);
   }
 
-  // ===== Normalización =====
+  // ===== Normalización nombre de regalo =====
   function normalizeGiftKey(name){
     if(!name) return "";
     const k = String(name).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -230,6 +231,90 @@
     const candidates = [key, key.endsWith('s') ? key.slice(0,-1) : key+'s'];
     for (const c of candidates){ if (GIFT_VALUES[c] != null) return GIFT_VALUES[c] * Math.max(1, count); }
     return 0;
+  }
+
+  // ===== DEDUPE (anti-duplicados) =====
+  const DEDUPE_TTL_MS = 3000;
+  const dedupeCache = new Map();
+
+  function makeGiftKey(data) {
+    const uid = data.uniqueId || data.userId || data.user || 'anon';
+    const giftId = data.giftId || data.gift?.id || data.giftName || data.gift || 'gift';
+    const rep = Number(data.repeatCount ?? data.count ?? 1) || 1;
+    const diamonds = Number(data.diamondCount ?? data.diamonds ?? data.value ?? 0) || 0;
+    const end = String(Boolean(data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted));
+    const msgId = data.messageId || data.id || '';
+    return `${msgId}|${uid}|${giftId}|${rep}|${diamonds}|end:${end}`;
+  }
+
+  function isDuplicateGift(data){
+    const key = makeGiftKey(data);
+    const now = Date.now();
+    for (const [k, t] of dedupeCache) {
+      if (now - t > DEDUPE_TTL_MS) dedupeCache.delete(k);
+    }
+    const last = dedupeCache.get(key);
+    if (last && (now - last) < DEDUPE_TTL_MS) return true;
+    dedupeCache.set(key, now);
+    return false;
+  }
+
+  // ===== Conteo de giros desde datos TikFinity =====
+  function parseCoinsFromObj(obj){
+    const fields = ['diamondCount','diamonds','value','coins','coin','giftCoins','giftValue'];
+    for (const f of fields){
+      const v = Number(obj?.[f]);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
+    return NaN;
+  }
+
+  function spinsFromGiftData(data){
+    const giftName = data.giftName ?? data.gift ?? data.name ?? '';
+    const username = data.uniqueId ?? data.nickname ?? data.user ?? data.username ?? 'Anónimo';
+
+    const finalCount = Number(
+      data.repeatCount ?? data.comboCount ?? data.count ?? data.quantity ?? 1
+    ) || 1;
+
+    const coinsDirect =
+      parseCoinsFromObj(data) ||
+      parseCoinsFromObj(data.gift) ||
+      NaN;
+
+    const hasStreakFlag = (
+      'repeatEnd' in data || 'streakEnd' in data || 'comboEnd' in data || 'isCompleted' in data
+    );
+    const isStreakEnd = Boolean(
+      data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted ?? false
+    );
+
+    // Anti-duplicados
+    if (isDuplicateGift(data)) return {spins:0, user:username, giftName};
+
+    // Contar SOLO al final si existen flags de racha
+    if (ONLY_ON_STREAK_END && hasStreakFlag) {
+      if (!isStreakEnd) return {spins:0, user:username, giftName};
+      if (Number.isFinite(coinsDirect) && coinsDirect > 0) {
+        return {spins: Math.max(0, Math.floor(coinsDirect / COINS_PER_SPIN)), user: username, giftName};
+      }
+      const inferred = inferCoinsFromName(giftName, Math.max(1, finalCount));
+      return {spins: Math.max(0, Math.floor(inferred / COINS_PER_SPIN)), user: username, giftName};
+    }
+
+    // Si no hay flags, procesar evento individual
+    if (Number.isFinite(coinsDirect) && coinsDirect > 0) {
+      return {spins: Math.max(0, Math.floor(coinsDirect / COINS_PER_SPIN)), user: username, giftName};
+    }
+    const inferred = inferCoinsFromName(giftName, Math.max(1, finalCount));
+    if (inferred > 0) {
+      return {spins: Math.max(0, Math.floor(inferred / COINS_PER_SPIN)), user: username, giftName};
+    }
+
+    if (COUNT_PER_SPIN > 0 && finalCount > 0) {
+      return {spins: finalCount * COUNT_PER_SPIN, user: username, giftName};
+    }
+    return {spins:0, user:username, giftName};
   }
 
   // ===== Giro =====
@@ -272,54 +357,6 @@
     if (!spinning) spinOnce();
   }
 
-  // ===== Parseo TikFinity Event API =====
-  function parseCoinsFromObj(obj){
-    const fields = ['coins','coin','value','diamonds','diamond','giftCoins','gift_coins','giftValue','gift_value','diamondCount'];
-    for (const f of fields){
-      const v = Number(obj?.[f]);
-      if (Number.isFinite(v) && v > 0) return v;
-    }
-    return NaN;
-  }
-
-  function spinsFromGiftData(data){
-    // data puede venir tal cual del conector
-    const giftName = data.giftName ?? data.gift ?? data.name ?? '';
-    const username = data.uniqueId ?? data.nickname ?? data.user ?? data.username ?? 'Anónimo';
-
-    const count = Number(
-      data.repeatCount ?? data.count ?? data.quantity ?? data.comboCount ?? data.combo_count ?? 1
-    ) || 1;
-
-    const coinsDirect = parseCoinsFromObj(data) || parseCoinsFromObj(data.gift) || NaN;
-
-    // Flags de racha (no los exigimos)
-    const isStreakEnd = Boolean(
-      data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted ?? false
-    );
-
-    // 1) Si hay monedas totales (diamonds/coins)
-    if (Number.isFinite(coinsDirect) && coinsDirect > 0){
-      const spins = Math.floor(coinsDirect / COINS_PER_SPIN);
-      return {spins: Math.max(0, spins), user: username, giftName};
-    }
-
-    // 2) Inferir por nombre * cantidad (rosquillas)
-    const inferred = inferCoinsFromName(giftName, Math.max(1, count));
-    if (inferred > 0){
-      const spins = Math.floor(inferred / COINS_PER_SPIN);
-      return {spins: Math.max(0, spins), user: username, giftName};
-    }
-
-    // 3) Recurso final por conteo si configuras COUNT_PER_SPIN
-    if (COUNT_PER_SPIN > 0 && count > 0){
-      if (ONLY_ON_STREAK_END && !isStreakEnd) return {spins:0, user:username, giftName};
-      return {spins: count * COUNT_PER_SPIN, user: username, giftName};
-    }
-
-    return {spins:0, user:username, giftName};
-  }
-
   // ===== Init =====
   (function init(){
     const baseHTML=carril.innerHTML;
@@ -333,6 +370,18 @@
   })();
 
   btn.addEventListener('click', () => { if (!spinning && pendingSpins===0) queueSpins(1, 'Tester'); });
+
+  // Tecla T = simular 15 rosquillas (450 monedas = 15/30 = 15 giros)
+  window.addEventListener('keydown', (e)=>{
+    if(e.key.toLowerCase()==='t'){
+      const sim = { event:'gift', data:{ giftName:'Rosquillas', repeatCount:15, diamondCount: 450, repeatEnd:true } };
+      console.log('[SIM]', sim);
+      const {spins,user,giftName} = spinsFromGiftData(sim.data);
+      console.log(`[SIM] ${giftName} -> spins: ${spins}`);
+      if (spins > 0) queueSpins(spins, user || 'Tester');
+      else showToast('Simulación sin giros', 1200);
+    }
+  });
 
   // ===== WebSocket TikFinity =====
   function getWSUrl(){
@@ -354,15 +403,13 @@
       let raw = ev.data;
       try{
         const msg = JSON.parse(raw);
-        // Formato TikFinity Event API: { event: "gift" | "chat" | ... , data: {...} }
         const evt = msg.event;
         const data = msg.data || {};
-        // Log básico
         console.log('[WS] evento:', evt, data);
 
         if (evt === 'gift'){
           const {spins, user, giftName} = spinsFromGiftData(data);
-          console.log(`[WS] gift ${giftName || '(sin nombre)'} -> spins: ${spins}`);
+          console.log(`[WS] gift ${giftName || '(?)'} -> spins: ${spins}`);
           if (spins > 0) queueSpins(spins, user);
         }
       }catch(err){
@@ -374,5 +421,3 @@
 </script>
 </body>
 </html>
-
-
