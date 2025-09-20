@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Overlay Ruleta TikTok</title>
+  <title>Overlay Ruleta TikTok (TikFinity WS)</title>
   <style>
     :root {
       --bg: rgba(0,0,0,.25);
@@ -17,94 +17,45 @@
     }
     #topbar {
       position: absolute; inset: 12px 12px auto 12px;
-      display:flex; gap:10px; align-items:center;
-      z-index: 100;
+      display:flex; gap:10px; align-items:center; z-index: 100;
     }
-    .pill {
-      padding: 8px 12px; border-radius: 12px; background: var(--pill);
-      backdrop-filter: blur(6px); font-weight:600;
-    }
+    .pill { padding:8px 12px; border-radius:12px; background:var(--pill); backdrop-filter:blur(6px); font-weight:600; }
     #status.ok { background: rgba(0,120,60,.6); }
     #status.err { background: rgba(140,0,0,.6); }
-
-    #wrap {
-      position:absolute; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      pointer-events:none;
-    }
+    #wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
     #viewport {
-      width:900px; max-width:95vw; height:180px;
-      border-radius:16px; position:relative; overflow:hidden;
-      background:rgba(20,20,20,.55);
-      outline:2px solid rgba(255,255,255,.08);
-      box-shadow:0 8px 24px rgba(0,0,0,.35);
+      width:900px; max-width:95vw; height:180px; border-radius:16px; position:relative; overflow:hidden;
+      background:rgba(20,20,20,.55); outline:2px solid rgba(255,255,255,.08); box-shadow:0 8px 24px rgba(0,0,0,.35);
     }
-    #carril {
-      display:flex; gap:12px; padding:0 24px;
-      transform:translateX(0);
-    }
-    #carril.anim {
-      transition: transform var(--dur) cubic-bezier(.12,.65,.22,1);
-    }
-
+    #carril { display:flex; gap:12px; padding:0 24px; transform:translateX(0); }
+    #carril.anim { transition: transform var(--dur) cubic-bezier(.12,.65,.22,1); }
     .item {
-      display:inline-flex; align-items:center; justify-content:center;
-      padding: 12px 16px;
-      aspect-ratio: 1 / 1;
-      min-width: 110px;
-      height: auto;
-      border-radius:12px;
-      font-size:20px; font-weight:800; text-align:center;
-      border:1px solid rgba(255,255,255,.12);
-      user-select:none;
-      line-height:1.1;
+      display:inline-flex; align-items:center; justify-content:center; padding:12px 16px;
+      aspect-ratio:1/1; min-width:110px; height:auto; border-radius:12px;
+      font-size:20px; font-weight:800; text-align:center; border:1px solid rgba(255,255,255,.12); user-select:none; line-height:1.1;
     }
     .item.nada { background:rgba(207,25,25,.7); }
     .item.casi { background:rgba(224,219,56,.7); color:#000; }
     .item.win  { background:rgba(16,203,66,.75); }
-
-    #marker {
-      position:absolute; inset:0; pointer-events:none; z-index:5;
-    }
+    #marker { position:absolute; inset:0; pointer-events:none; z-index:5; }
     #marker::after {
-      content:""; position:absolute; top:-6px; left:50%;
-      transform:translateX(-50%);
-      width:0; height:0;
-      border-left:12px solid transparent;
-      border-right:12px solid transparent;
-      border-top:16px solid var(--accent);
+      content:""; position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+      border-left:12px solid transparent; border-right:12px solid transparent; border-top:16px solid var(--accent);
       filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));
     }
-
     #toast {
-      position:absolute; bottom:20px; left:50%;
-      transform:translateX(-50%) translateY(50px);
-      background:rgba(0,0,0,.75);
-      padding:10px 16px; border-radius:10px; opacity:0;
-      transition:transform .35s ease, opacity .35s ease;
-      font-weight:700;
+      position:absolute; bottom:20px; left:50%; transform:translateX(-50%) translateY(50px);
+      background:rgba(0,0,0,.75); padding:10px 16px; border-radius:10px; opacity:0;
+      transition:transform .35s ease, opacity .35s ease; font-weight:700;
     }
     #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-
     #gifterBadge {
-      position:absolute;
-      left:50%;
-      top:calc(50% - 180px/2 - 24px);
-      transform:translateX(-50%);
-      background:rgba(0,0,0,.8);
-      padding:6px 12px; border-radius:10px;
-      font-weight:800; font-size:14px;
-      white-space:nowrap;
-      opacity:0;
-      transition:opacity .3s ease, transform .3s ease;
-      pointer-events:none;
-      z-index:20;
+      position:absolute; left:50%;
+      top:calc(50% - 180px/2 - 24px); transform:translateX(-50%);
+      background:rgba(0,0,0,.8); padding:6px 12px; border-radius:10px; font-weight:800; font-size:14px; white-space:nowrap;
+      opacity:0; transition:opacity .3s ease, transform .3s ease; pointer-events:none; z-index:20;
     }
-    #gifterBadge.show {
-      opacity:1;
-      transform:translateX(-50%) translateY(-4px);
-    }
-
+    #gifterBadge.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
     #btn { pointer-events:auto; }
   </style>
 </head>
@@ -164,14 +115,15 @@
   const BASE_MS=15000, MS_POR_SLOT=0, COPIAS=15;
   const CENTER_NUDGE_PX = 0;
 
-  // === Reglas de conversión a giros ===
-  const COINS_PER_SPIN = 30;   // 30 monedas = 1 giro
+  const COINS_PER_SPIN = 1;   // 30 monedas = 1 giro
   const COUNT_PER_SPIN = 0;
-  const ONLY_ON_STREAK_END = true;
+  const ONLY_ON_STREAK_END = false; // no exigir fin de racha
 
-  // === Solo rosquilla ===
+  // Variantes de rosquilla
   const GIFT_VALUES = {
-    "rosquilla": 30, "dona": 30, "donut": 30
+    "rosquilla": 30, "rosquillas": 30,
+    "dona": 30, "donas": 30,
+    "donut": 30, "donuts": 30
   };
 
   // ===== Estado =====
@@ -188,7 +140,7 @@
   let hideBadgeTimer=null;
   let CURRENT_TX = 0;
 
-  // ===== Utilidades de layout =====
+  // ===== Layout =====
   function measureSizes(){
     const prev=carril.style.transform;
     carril.classList.remove('anim'); carril.style.transform='translateX(0px)';
@@ -201,12 +153,8 @@
     requestAnimationFrame(()=>{ carril.style.transform=prev||'translateX(0px)'; });
   }
   function setTransform(tx, smooth=false, durMs=BASE_MS){
-    if(smooth){
-      carril.style.setProperty('--dur', `${Math.max(50, Math.round(durMs))}ms`);
-      carril.classList.add('anim');
-    } else {
-      carril.classList.remove('anim');
-    }
+    if(smooth){ carril.style.setProperty('--dur', `${Math.max(50, Math.round(durMs))}ms`); carril.classList.add('anim'); }
+    else { carril.classList.remove('anim'); }
     CURRENT_TX = tx;
     carril.style.transform = `translateX(${tx}px)`;
   }
@@ -218,10 +166,7 @@
     currentAbs=absIndex;
   }
   function mod(n,m){return((n%m)+m)%m;}
-  function recenter(absIndex){
-    const rel=mod(absIndex,baseCount);
-    renderTo(middleBlock*baseCount+rel,false);
-  }
+  function recenter(absIndex){ const rel=mod(absIndex,baseCount); renderTo(middleBlock*baseCount+rel,false); }
 
   // ===== Probabilidades =====
   function getWeightedRandomIndex() {
@@ -246,23 +191,15 @@
       return 0;
     }
     const r=Math.random(); let acc=0;
-    for (const k of ORDER) {
-      acc += weights[k]/sum;
-      if (r < acc && buckets[k].length) {
-        const b=buckets[k]; return b[Math.floor(Math.random()*b.length)];
-      }
-    }
-    for (let i=ORDER.length-1;i>=0;i--){
-      const b=buckets[ORDER[i]]; if (b.length) return b[Math.floor(Math.random()*b.length)];
-    }
+    for (const k of ORDER) { acc += weights[k]/sum; if (r < acc && buckets[k].length) { const b=buckets[k]; return b[Math.floor(Math.random()*b.length)]; } }
+    for (let i=ORDER.length-1;i>=0;i--){ const b=buckets[ORDER[i]]; if (b.length) return b[Math.floor(Math.random()*b.length)]; }
     return 0;
   }
 
-  // ===== UI helpers =====
+  // ===== UI =====
   function showToast(txt,ms=1200){ toast.textContent=txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),ms); }
   function showBadge(txt){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); gifterBadge.textContent=`🎁 ${txt}`; gifterBadge.classList.add('show'); }
   function hideBadgeLater(ms=800){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); hideBadgeTimer=setTimeout(()=>gifterBadge.classList.remove('show'),ms); }
-
   function getItemUnderMarker(){
     const rect = viewport.getBoundingClientRect();
     const x = rect.left + rect.width/2 + CENTER_NUDGE_PX;
@@ -277,6 +214,22 @@
     const er = el.getBoundingClientRect();
     const delta = (er.left + er.width/2) - (vp.left + vp.width/2);
     setTransform(CURRENT_TX - delta, false);
+  }
+
+  // ===== Normalización =====
+  function normalizeGiftKey(name){
+    if(!name) return "";
+    const k = String(name).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if (/\brosquill/.test(k)) return 'rosquilla';
+    if (/\bdona/.test(k))     return 'dona';
+    if (/\bdonut/.test(k))    return 'donut';
+    return k;
+  }
+  function inferCoinsFromName(name, count=1) {
+    const key = normalizeGiftKey(name);
+    const candidates = [key, key.endsWith('s') ? key.slice(0,-1) : key+'s'];
+    for (const c of candidates){ if (GIFT_VALUES[c] != null) return GIFT_VALUES[c] * Math.max(1, count); }
+    return 0;
   }
 
   // ===== Giro =====
@@ -304,72 +257,67 @@
       showToast('Premio: '+premio);
       hideBadgeLater(600);
       spinning=false;
-      if (pendingSpins > 0) {
-        setTimeout(spinOnce, 300);
-      }
+      if (pendingSpins > 0) setTimeout(spinOnce, 300);
     };
     carril.addEventListener('transitionend',onEnd,{once:true});
   }
 
-  // ===== Cola =====
   function queueSpins(n, user){
     n = Math.max(0, Math.floor(n||0));
     if (!n) return;
     const name = user || 'Anónimo';
     for (let i=0;i<n;i++) spinQueue.push(name);
     pendingSpins += n;
+    console.log(`[QUEUE] +${n} giros por ${name}. Pendientes: ${pendingSpins}`);
     if (!spinning) spinOnce();
   }
 
-  // ===== Gifts =====
-  function inferCoinsFromName(name, count=1) {
-    if (!name) return 0;
-    const key = String(name).toLowerCase();
-    const per = GIFT_VALUES[key] || 0;
-    return per * Math.max(1, count);
+  // ===== Parseo TikFinity Event API =====
+  function parseCoinsFromObj(obj){
+    const fields = ['coins','coin','value','diamonds','diamond','giftCoins','gift_coins','giftValue','gift_value','diamondCount'];
+    for (const f of fields){
+      const v = Number(obj?.[f]);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
+    return NaN;
   }
 
-  function spinsFromGift(msg){
-    const name = (msg.gift ?? msg.gift_name ?? msg.giftName ?? "").toString();
+  function spinsFromGiftData(data){
+    // data puede venir tal cual del conector
+    const giftName = data.giftName ?? data.gift ?? data.name ?? '';
+    const username = data.uniqueId ?? data.nickname ?? data.user ?? data.username ?? 'Anónimo';
+
     const count = Number(
-      msg.count ?? msg.repeat_count ?? msg.repeatCount ??
-      msg.quantity ?? msg.combo_count ?? 0
-    );
+      data.repeatCount ?? data.count ?? data.quantity ?? data.comboCount ?? data.combo_count ?? 1
+    ) || 1;
 
-    let coins = Number(
-      msg.coins ?? msg.diamonds ?? msg.coin ?? msg.value ?? NaN
-    );
-    if (!isFinite(coins) || coins < 0) coins = NaN;
+    const coinsDirect = parseCoinsFromObj(data) || parseCoinsFromObj(data.gift) || NaN;
 
-    const hasStreakFlag = (
-      'streak_end' in msg || 'streakEnd' in msg ||
-      'repeat_end' in msg || 'repeatEnd' in msg ||
-      'combo_end'  in msg || 'comboEnd'  in msg ||
-      'is_completed' in msg || 'isCompleted' in msg
-    );
+    // Flags de racha (no los exigimos)
     const isStreakEnd = Boolean(
-      msg.streak_end ?? msg.streakEnd ?? msg.repeat_end ?? msg.repeatEnd ??
-      msg.combo_end  ?? msg.comboEnd  ?? msg.is_completed ?? msg.isCompleted ?? false
+      data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted ?? false
     );
 
-    if (ONLY_ON_STREAK_END && hasStreakFlag && !isStreakEnd) {
-      return 0;
+    // 1) Si hay monedas totales (diamonds/coins)
+    if (Number.isFinite(coinsDirect) && coinsDirect > 0){
+      const spins = Math.floor(coinsDirect / COINS_PER_SPIN);
+      return {spins: Math.max(0, spins), user: username, giftName};
     }
 
-    let spins = 0;
-
-    if (isFinite(coins)) {
-      spins = Math.floor(coins / COINS_PER_SPIN);
-    } else {
-      const inferred = inferCoinsFromName(name, Math.max(1, count || 1));
-      if (inferred > 0) {
-        spins = Math.floor(inferred / COINS_PER_SPIN);
-      } else if (COUNT_PER_SPIN > 0 && count > 0) {
-        spins = count * COUNT_PER_SPIN;
-      }
+    // 2) Inferir por nombre * cantidad (rosquillas)
+    const inferred = inferCoinsFromName(giftName, Math.max(1, count));
+    if (inferred > 0){
+      const spins = Math.floor(inferred / COINS_PER_SPIN);
+      return {spins: Math.max(0, spins), user: username, giftName};
     }
 
-    return Math.max(0, Math.floor(spins || 0));
+    // 3) Recurso final por conteo si configuras COUNT_PER_SPIN
+    if (COUNT_PER_SPIN > 0 && count > 0){
+      if (ONLY_ON_STREAK_END && !isStreakEnd) return {spins:0, user:username, giftName};
+      return {spins: count * COUNT_PER_SPIN, user: username, giftName};
+    }
+
+    return {spins:0, user:username, giftName};
   }
 
   // ===== Init =====
@@ -384,25 +332,42 @@
     window.addEventListener('resize',()=>{measureSizes();renderTo(currentAbs,false);});
   })();
 
-  btn.addEventListener('click', () => {
-    if (spinning || pendingSpins > 0) return;
-    queueSpins(1, 'Tester');
-  });
+  btn.addEventListener('click', () => { if (!spinning && pendingSpins===0) queueSpins(1, 'Tester'); });
+
+  // ===== WebSocket TikFinity =====
+  function getWSUrl(){
+    const u = new URL(window.location.href);
+    return u.searchParams.get('ws') || 'ws://localhost:21213/';
+  }
 
   function openWS(){
-    try{ws=new WebSocket('ws://192.168.1.69:8765');}
-    catch(e){statusEl.textContent='WS: error URL';statusEl.classList.add('err');return;}
-    ws.onopen=()=>{statusEl.textContent='WS: conectado';statusEl.classList.add('ok');};
-    ws.onclose=()=>{statusEl.textContent='WS: desconectado';statusEl.classList.remove('ok');setTimeout(openWS,1000);};
-    ws.onerror=()=>{statusEl.textContent='WS: error';statusEl.classList.add('err');};
-    ws.onmessage=ev=>{
+    const url = getWSUrl();
+    console.log('[WS] conectando a', url);
+    try{ ws = new WebSocket(url); }
+    catch(e){ statusEl.textContent='WS: error URL'; statusEl.classList.add('err'); return; }
+
+    ws.onopen = () => { statusEl.textContent=`WS: conectado`; statusEl.classList.add('ok'); statusEl.classList.remove('err'); };
+    ws.onclose = () => { statusEl.textContent='WS: desconectado'; statusEl.classList.remove('ok'); setTimeout(openWS, 1000); };
+    ws.onerror = (e) => { console.warn('[WS] error', e); statusEl.textContent='WS: error'; statusEl.classList.add('err'); };
+
+    ws.onmessage = (ev) => {
+      let raw = ev.data;
       try{
-        const msg=JSON.parse(ev.data);
-        if(msg.type==='gift'){
-          const spins = spinsFromGift(msg);
-          if (spins > 0) queueSpins(spins, msg.user);
+        const msg = JSON.parse(raw);
+        // Formato TikFinity Event API: { event: "gift" | "chat" | ... , data: {...} }
+        const evt = msg.event;
+        const data = msg.data || {};
+        // Log básico
+        console.log('[WS] evento:', evt, data);
+
+        if (evt === 'gift'){
+          const {spins, user, giftName} = spinsFromGiftData(data);
+          console.log(`[WS] gift ${giftName || '(sin nombre)'} -> spins: ${spins}`);
+          if (spins > 0) queueSpins(spins, user);
         }
-      }catch{}
+      }catch(err){
+        console.warn('[WS] no-JSON o formato inesperado:', raw, err);
+      }
     };
   }
   openWS();
