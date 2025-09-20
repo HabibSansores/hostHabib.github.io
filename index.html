@@ -47,13 +47,12 @@
       transition: transform var(--dur) cubic-bezier(.12,.65,.22,1);
     }
 
-    /* Slots cuadrados con auto-ajuste al texto */
     .item {
       display:inline-flex; align-items:center; justify-content:center;
       padding: 12px 16px;
-      aspect-ratio: 1 / 1;    /* cuadrado */
-      min-width: 110px;       /* crece según texto; alto = ancho */
-      height: auto;           /* lo gobierna el aspect-ratio */
+      aspect-ratio: 1 / 1;
+      min-width: 110px;
+      height: auto;
       border-radius:12px;
       font-size:20px; font-weight:800; text-align:center;
       border:1px solid rgba(255,255,255,.12);
@@ -87,11 +86,10 @@
     }
     #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-    /* Badge fuera del viewport (encima de la flecha) */
     #gifterBadge {
       position:absolute;
       left:50%;
-      top:calc(50% - 180px/2 - 24px); /* justo arriba del viewport (altura 180px) */
+      top:calc(50% - 180px/2 - 24px);
       transform:translateX(-50%);
       background:rgba(0,0,0,.8);
       padding:6px 12px; border-radius:10px;
@@ -107,7 +105,6 @@
       transform:translateX(-50%) translateY(-4px);
     }
 
-    /* Botón de prueba visible */
     #btn { pointer-events:auto; }
   </style>
 </head>
@@ -163,25 +160,24 @@
 
 <script>
   // ===== CONFIG =====
-  const PROBABILIDADES={nada:1.0,casi:0,win:0}; // edita a gusto
+  const PROBABILIDADES={nada:1.0,casi:0,win:0};
   const BASE_MS=15000, MS_POR_SLOT=0, COPIAS=15;
-  const CENTER_NUDGE_PX = 0; // ajuste fino al centro visual
+  const CENTER_NUDGE_PX = 0;
 
   // === Reglas de conversión a giros ===
-  const COINS_PER_SPIN = 1;          // 1 giro por cada N coins
-  const COUNT_PER_SPIN = 0;          // 0 para NO sumar por count si ya tienes coins
-  const ONLY_ON_STREAK_END = true;   // true: solo contar al final de la racha
+  const COINS_PER_SPIN = 30;   // 30 monedas = 1 giro
+  const COUNT_PER_SPIN = 0;
+  const ONLY_ON_STREAK_END = true;
 
-  // Si tu emisor NO manda coins, mapea valores por nombre:
+  // === Solo rosquilla ===
   const GIFT_VALUES = {
-    "rose": 1, "rosa": 1, "la rosa": 1,
-    // agrega más si quieres: "finger heart": 5, ...
+    "rosquilla": 30, "dona": 30, "donut": 30
   };
 
   // ===== Estado =====
   let ws=null, spinning=false;
-  let pendingSpins=0;           // cuántos giros quedan
-  let spinQueue=[];             // cola de nombres por CADA giro: ["user","user",...]
+  let pendingSpins=0;
+  let spinQueue=[];
   const statusEl=document.getElementById('status');
   const btn=document.getElementById('btn');
   const viewport=document.getElementById('viewport');
@@ -227,7 +223,7 @@
     renderTo(middleBlock*baseCount+rel,false);
   }
 
-  // ===== Probabilidades corregidas (respetan 0%) =====
+  // ===== Probabilidades =====
   function getWeightedRandomIndex() {
     const items = carril.querySelectorAll('.item');
     const buckets = { nada: [], casi: [], win: [] };
@@ -267,7 +263,6 @@
   function showBadge(txt){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); gifterBadge.textContent=`🎁 ${txt}`; gifterBadge.classList.add('show'); }
   function hideBadgeLater(ms=800){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); hideBadgeTimer=setTimeout(()=>gifterBadge.classList.remove('show'),ms); }
 
-  // Detectar y centrar EXACTO el slot bajo la flecha
   function getItemUnderMarker(){
     const rect = viewport.getBoundingClientRect();
     const x = rect.left + rect.width/2 + CENTER_NUDGE_PX;
@@ -288,12 +283,8 @@
   function spinOnce(){
     if(spinning){return;}
     spinning=true;
-
-    // Tomamos un nombre de la cola para este giro
     const currentSpinner = spinQueue.shift() || 'Anónimo';
     pendingSpins = Math.max(0, pendingSpins - 1);
-
-    // Mostrar el nombre en CADA giro
     showBadge(currentSpinner);
 
     const idxRel=getWeightedRandomIndex();
@@ -312,9 +303,7 @@
       const premio = elCentro ? elCentro.innerText.trim().replace(/\s+/g,' ') : '(?)';
       showToast('Premio: '+premio);
       hideBadgeLater(600);
-
       spinning=false;
-      // Si aún quedan giros en la cola, continúa automáticamente
       if (pendingSpins > 0) {
         setTimeout(spinOnce, 300);
       }
@@ -322,19 +311,17 @@
     carril.addEventListener('transitionend',onEnd,{once:true});
   }
 
-  // ===== Cola de giros =====
+  // ===== Cola =====
   function queueSpins(n, user){
     n = Math.max(0, Math.floor(n||0));
     if (!n) return;
     const name = user || 'Anónimo';
-    // Encola el nombre N veces (un nombre por cada giro)
     for (let i=0;i<n;i++) spinQueue.push(name);
     pendingSpins += n;
-    // Si no se está girando, disparar el primero
     if (!spinning) spinOnce();
   }
 
-  // ===== Utilidades gifts =====
+  // ===== Gifts =====
   function inferCoinsFromName(name, count=1) {
     if (!name) return 0;
     const key = String(name).toLowerCase();
@@ -342,7 +329,6 @@
     return per * Math.max(1, count);
   }
 
-  // ===== Convertir mensaje gift → giros (sin doble conteo) =====
   function spinsFromGift(msg){
     const name = (msg.gift ?? msg.gift_name ?? msg.giftName ?? "").toString();
     const count = Number(
@@ -350,7 +336,6 @@
       msg.quantity ?? msg.combo_count ?? 0
     );
 
-    // Preferimos coins si existen; si no, inferimos por nombre*count
     let coins = Number(
       msg.coins ?? msg.diamonds ?? msg.coin ?? msg.value ?? NaN
     );
@@ -359,7 +344,7 @@
     const hasStreakFlag = (
       'streak_end' in msg || 'streakEnd' in msg ||
       'repeat_end' in msg || 'repeatEnd' in msg ||
-      'combo_end'  in msg || 'comboEnd' in msg ||
+      'combo_end'  in msg || 'comboEnd'  in msg ||
       'is_completed' in msg || 'isCompleted' in msg
     );
     const isStreakEnd = Boolean(
@@ -368,26 +353,22 @@
     );
 
     if (ONLY_ON_STREAK_END && hasStreakFlag && !isStreakEnd) {
-      return 0; // esperamos al final para no contar doble
+      return 0;
     }
 
     let spins = 0;
 
     if (isFinite(coins)) {
-      // Caso A: tenemos coins explícitas ⇒ 1 giro por coin (o por COINS_PER_SPIN)
       spins = Math.floor(coins / COINS_PER_SPIN);
     } else {
-      // Caso B: no hay coins; intentamos inferir por nombre*count
       const inferred = inferCoinsFromName(name, Math.max(1, count || 1));
       if (inferred > 0) {
         spins = Math.floor(inferred / COINS_PER_SPIN);
       } else if (COUNT_PER_SPIN > 0 && count > 0) {
-        // último recurso si quieres basarte en count
         spins = count * COUNT_PER_SPIN;
       }
     }
 
-    // Sin datos válidos ⇒ 0 (evita giros fantasma)
     return Math.max(0, Math.floor(spins || 0));
   }
 
@@ -403,15 +384,13 @@
     window.addEventListener('resize',()=>{measureSizes();renderTo(currentAbs,false);});
   })();
 
-  // Botón de prueba (exactamente 1 giro)
   btn.addEventListener('click', () => {
-    if (spinning || pendingSpins > 0) return; // evita dobles
+    if (spinning || pendingSpins > 0) return;
     queueSpins(1, 'Tester');
   });
 
-  // ===== WebSocket =====
   function openWS(){
-    try{ws=new WebSocket('ws://10.64.134.247:8765');}
+    try{ws=new WebSocket('ws://192.168.1.69:8765');}
     catch(e){statusEl.textContent='WS: error URL';statusEl.classList.add('err');return;}
     ws.onopen=()=>{statusEl.textContent='WS: conectado';statusEl.classList.add('ok');};
     ws.onclose=()=>{statusEl.textContent='WS: desconectado';statusEl.classList.remove('ok');setTimeout(openWS,1000);};
@@ -420,7 +399,6 @@
       try{
         const msg=JSON.parse(ev.data);
         if(msg.type==='gift'){
-          // console.debug('[GIFT]', msg); // descomenta para ver el payload real
           const spins = spinsFromGift(msg);
           if (spins > 0) queueSpins(spins, msg.user);
         }
@@ -431,8 +409,3 @@
 </script>
 </body>
 </html>
-
-
-
-
-
