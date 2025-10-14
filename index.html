@@ -11,7 +11,6 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            /* El fondo ahora es transparente por defecto para el modo overlay */
             background-color: transparent;
             color: #e0e0e0;
             overflow: hidden;
@@ -75,8 +74,6 @@
         .lucky-wheel-logo {
             filter: drop-shadow(0 0 1rem rgba(139, 92, 246, 0.6));
         }
-
-        /* Roulette Styles */
         .roulette-container {
             width: 100%;
             max-width: 90vw;
@@ -205,7 +202,7 @@
             </div>
             <div class="mt-4 space-x-2 flex-shrink-0">
                 <button id="addOptionBtn" class="btn btn-primary">Añadir Opción</button>
-                <button id="saveWheelBtn" class="btn btn-green">Guardar</button>
+                <button id="saveWheelBtn" class="btn btn-green">Guardar y Obtener Enlace</button>
                 <button id="backToSettingsBtn" class="btn btn-secondary">Cancelar</button>
             </div>
         </div>
@@ -213,18 +210,25 @@
     
     <!-- Pantalla de Juego -->
     <div id="playScreen" class="screen">
-        <div class="absolute top-4 left-4">
-             <button id="backToHomeFromPlayBtn" class="btn btn-secondary">Volver al Inicio</button>
+        <div id="setupMessage" class="hidden text-center p-8 bg-gray-800 rounded-lg shadow-xl max-w-lg">
+             <p class="text-2xl font-bold text-yellow-400 mb-4">¡La ruleta está vacía!</p>
+             <p class="text-lg">Para empezar, abre tu enlace en un navegador y añade <strong class="text-white">?setup=true</strong> al final de la URL para configurar las opciones.</p>
         </div>
-        <div class="text-center mb-6">
-            <p class="text-xl">Giro por:</p>
-            <p id="donorNameDisplay" class="text-3xl font-bold text-yellow-400"></p>
+        
+        <div id="gameUI" class="w-full flex flex-col items-center">
+            <div class="absolute top-4 left-4">
+                 <button id="backToHomeFromPlayBtn" class="btn btn-secondary">Volver al Inicio</button>
+            </div>
+            <div class="text-center mb-6">
+                <p class="text-xl">Giro por:</p>
+                <p id="donorNameDisplay" class="text-3xl font-bold text-yellow-400"></p>
+            </div>
+            <div class="roulette-container">
+                <div class="roulette-pointer"></div>
+                <div id="rouletteWheel" class="roulette-wheel"></div>
+            </div>
+            <button id="spinBtn" class="btn btn-primary mt-8 text-2xl px-12 py-4">¡Girar!</button>
         </div>
-        <div class="roulette-container">
-            <div class="roulette-pointer"></div>
-            <div id="rouletteWheel" class="roulette-wheel"></div>
-        </div>
-        <button id="spinBtn" class="btn btn-primary mt-8 text-2xl px-12 py-4">¡Girar!</button>
     </div>
 
     <!-- Modal de Ganador -->
@@ -234,6 +238,27 @@
             <h2 class="text-xl mb-4">El ganador es:</h2>
             <p id="winnerResult" class="text-4xl font-bold mb-6"></p>
             <button id="closeWinnerModalBtn" class="btn btn-primary">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Enlace Generado -->
+    <div id="linkModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-lg text-left">
+            <h2 id="linkModalTitle" class="text-2xl font-bold mb-4">¡Ruleta Guardada y Lista!</h2>
+            <p id="linkModalDescription" class="mb-4">Usa este enlace único en TikTok Studio. Ya tiene tus opciones configuradas:</p>
+            <textarea id="linkModalTextarea" class="w-full h-24 bg-gray-900 text-white p-2 rounded border border-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <div class="mt-4 flex justify-end space-x-2">
+                <button id="copyLinkBtn" class="btn btn-primary">Copiar Enlace</button>
+                <button id="closeLinkModalBtn" class="btn btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Alerta -->
+    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center max-w-sm">
+            <p id="alertMessage" class="text-lg mb-6"></p>
+            <button id="closeAlertModalBtn" class="btn btn-primary">Aceptar</button>
         </div>
     </div>
 
@@ -267,12 +292,39 @@
         const spinTriggerText = document.getElementById('spinTriggerText');
         const connectionStatus = document.getElementById('connectionStatus');
 
+        // Modals
+        const alertModal = document.getElementById('alertModal');
+        const alertMessage = document.getElementById('alertMessage');
+        const closeAlertModalBtn = document.getElementById('closeAlertModalBtn');
+        const linkModal = document.getElementById('linkModal');
+        const linkModalTextarea = document.getElementById('linkModalTextarea');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        const closeLinkModalBtn = document.getElementById('closeLinkModalBtn');
+
         let currentWheelOptions = [];
         let isSpinning = false;
-        let isSetupMode = false; // Flag para saber si estamos en modo configuración
+        let isSetupMode = false;
         
-        // --- NAVEGACIÓN ---
+        // --- LÓGICA DE MODALES ---
+        function showAlert(message) {
+            alertMessage.textContent = message;
+            alertModal.style.display = 'flex';
+        }
+        closeAlertModalBtn.addEventListener('click', () => {
+            alertModal.style.display = 'none';
+        });
 
+        copyLinkBtn.addEventListener('click', () => {
+            linkModalTextarea.select();
+            document.execCommand('copy');
+            showAlert('¡Enlace copiado al portapapeles!');
+        });
+        closeLinkModalBtn.addEventListener('click', () => {
+            linkModal.style.display = 'none';
+            showScreen('settings');
+        });
+
+        // --- NAVEGACIÓN ---
         function showScreen(screenName) {
             Object.values(screens).forEach(screen => screen.classList.remove('active'));
             screens[screenName].classList.add('active');
@@ -290,12 +342,11 @@
              if (currentWheelOptions.length > 0) {
                 triggerSpin('Juego Manual');
             } else {
-                alert('Primero debes crear una ruleta en Ajustes.');
+                showAlert('Primero debes crear una ruleta en Ajustes.');
             }
         });
         
         // --- LÓGICA DE CREACIÓN Y GUARDADO DE RULETA ---
-        
         let optionIdCounter = 0;
         const colorPalette = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6", "#d946ef"];
 
@@ -305,10 +356,9 @@
         }
 
         function createOptionElement({ text = '', frequency = 1, color }) {
-             optionIdCounter++;
+            optionIdCounter++;
             const optionId = `option-${optionIdCounter}`;
             const newColor = color || getNextColor();
-
             const optionDiv = document.createElement('div');
             optionDiv.id = optionId;
             optionDiv.className = 'flex items-center space-x-2 bg-gray-700 p-2 rounded';
@@ -318,12 +368,8 @@
                 <input type="color" value="${newColor}" class="color-input w-10 h-10 p-1 bg-gray-600 rounded border border-gray-500 cursor-pointer">
                 <button class="remove-option-btn bg-red-600 hover:bg-red-700 text-white font-bold p-2 rounded">&times;</button>
             `;
-            
             optionsContainer.appendChild(optionDiv);
-
-            optionDiv.querySelector('.remove-option-btn').addEventListener('click', () => {
-                optionDiv.remove();
-            });
+            optionDiv.querySelector('.remove-option-btn').addEventListener('click', () => optionDiv.remove());
         }
 
         function populateCreateScreen() {
@@ -342,30 +388,34 @@
             const options = [];
             const optionElements = optionsContainer.querySelectorAll('.flex.items-center');
             let hasError = false;
-
             optionElements.forEach(el => {
                 const text = el.querySelector('.text-input').value.trim();
                 const frequency = parseInt(el.querySelector('.freq-input').value, 10);
                 const color = el.querySelector('.color-input').value;
-
                 if (!text || isNaN(frequency) || frequency < 1) { hasError = true; }
                 options.push({ text, frequency, color });
             });
 
             if (hasError) {
-                alert('Por favor, completa todos los campos de texto y asegúrate que la frecuencia sea al menos 1.');
+                showAlert('Por favor, completa todos los campos de texto y asegúrate que la frecuencia sea al menos 1.');
                 return;
             }
             if (options.length < 2) {
-                alert('Necesitas al menos 2 opciones para crear la ruleta.');
+                showAlert('Necesitas al menos 2 opciones para crear la ruleta.');
                 return;
             }
             
             currentWheelOptions = options;
             saveWheelToLocalStorage();
             prepareRoulette();
-            alert('¡Ruleta guardada!');
-            showScreen('settings');
+
+            const jsonString = JSON.stringify(currentWheelOptions);
+            const base64String = btoa(jsonString);
+            const baseURL = window.location.origin + window.location.pathname;
+            const shareableLink = `${baseURL}?wheel=${base64String}`;
+            
+            linkModalTextarea.value = shareableLink;
+            linkModal.style.display = 'flex';
         });
 
         function saveWheelToLocalStorage() {
@@ -374,34 +424,32 @@
 
         function loadWheelFromLocalStorage() {
             const savedOptions = localStorage.getItem('luckyWheelOptions');
-            if (savedOptions) {
+            if (savedOptions && savedOptions !== '[]') {
                 currentWheelOptions = JSON.parse(savedOptions);
                 prepareRoulette();
                 buttons.play.disabled = false;
+                return true;
             } else {
                  buttons.play.disabled = true;
+                 currentWheelOptions = [];
+                 prepareRoulette();
+                 return false;
             }
         }
 
         // --- LÓGICA DEL JUEGO DE RULETA ---
-        
         function prepareRoulette() {
+            rouletteWheel.innerHTML = '';
             if (currentWheelOptions.length === 0) return;
             let weightedList = [];
             currentWheelOptions.forEach(option => {
-                for (let i = 0; i < option.frequency; i++) {
-                    weightedList.push(option);
-                }
+                for (let i = 0; i < option.frequency; i++) { weightedList.push(option); }
             });
-
             for (let i = weightedList.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [weightedList[i], weightedList[j]] = [weightedList[j], weightedList[i]];
             }
-            
             const wheelItems = [...weightedList, ...weightedList, ...weightedList]; 
-
-            rouletteWheel.innerHTML = '';
             wheelItems.forEach(item => {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'roulette-item';
@@ -414,34 +462,26 @@
         function triggerSpin(donor = 'Juego Manual') {
             if (isSpinning || currentWheelOptions.length < 2) return;
             isSpinning = true;
-
             showScreen('play');
             donorNameDisplay.textContent = donor;
             spinTriggerText.textContent = `Giro por ${donor}`;
             document.getElementById('spinBtn').style.display = (donor === 'Juego Manual' && isSetupMode) ? 'block' : 'none';
-
             const totalItems = rouletteWheel.children.length;
             const singleSectionItems = totalItems / 3;
             const itemWidth = 120;
-            
             const winnerIndexInSection = Math.floor(Math.random() * singleSectionItems);
             const targetIndex = singleSectionItems + winnerIndexInSection;
-
             const randomOffset = (Math.random() - 0.5) * itemWidth * 0.8;
             const targetPosition = (targetIndex * itemWidth) - (rouletteWheel.parentElement.clientWidth / 2) + (itemWidth / 2) + randomOffset;
-            
             rouletteWheel.style.transition = 'none';
             rouletteWheel.style.transform = `translateX(0px)`;
-            
             setTimeout(() => {
                 rouletteWheel.style.transition = 'transform 7s cubic-bezier(0.25, 0.1, 0.25, 1)';
                 rouletteWheel.style.transform = `translateX(-${targetPosition}px)`;
             }, 50);
-
             rouletteWheel.addEventListener('transitionend', () => {
                 isSpinning = false;
                 const winnerOption = rouletteWheel.children[targetIndex];
-                
                 winnerResult.textContent = winnerOption.textContent;
                 winnerResult.style.color = winnerOption.style.backgroundColor;
                 winnerModal.style.display = 'flex';
@@ -453,43 +493,47 @@
             prepareRoulette();
             rouletteWheel.style.transition = 'none';
             rouletteWheel.style.transform = `translateX(0px)`;
-            // Si estamos en modo setup, vuelve al inicio. Si no, oculta todo.
             if (isSetupMode) {
                 showScreen('home');
             } else {
-                screens.play.classList.remove('active');
+                donorNameDisplay.textContent = 'Esperando donación...';
             }
         });
 
         // --- LÓGICA DE WEBSOCKET (TIKFINITY) ---
-
         function connectWebSocket() {
             const ws = new WebSocket('ws://localhost:21213/');
-
             ws.onopen = () => {
                 console.log('Conectado a TikFinity.');
                 connectionStatus.innerHTML = `<span class="dot bg-green-500"></span><span>Conectado</span>`;
                 connectionStatus.classList.remove('bg-gray-700', 'text-gray-300');
                 connectionStatus.classList.add('bg-green-800', 'text-green-200');
             };
-
             ws.onmessage = (event) => {
+                console.log("--- MENSAJE CRUDO RECIBIDO DE TIKFINITY ---");
+                console.log(event.data);
+                console.log("-----------------------------------------");
                 try {
                     const message = JSON.parse(event.data);
-                    console.log('Mensaje de TikFinity:', message);
-
+                    console.log('Mensaje procesado:', message);
                     if (message.event === 'tiktok_gift' && message.data) {
-                        const { user, coins } = message.data;
-                        if (coins === 1) {
-                            console.log(`${user} ha donado ${coins} monedas. ¡Girando la ruleta!`);
+                        console.log('Evento de Regalo detectado. Datos:', message.data);
+                        const user = message.data.user || message.data.nickname || 'Anónimo';
+                        // TikFinity puede usar 'coins' o 'diamondCount'. Revisamos ambos.
+                        const donationValue = message.data.coins || message.data.diamondCount;
+
+                        // Nos aseguramos que el valor exista y sea 1 (convirtiendo texto a número)
+                        if (donationValue && parseInt(donationValue, 10) === 1) {
+                            console.log(`${user} ha donado 1 moneda. ¡Girando la ruleta!`);
                             triggerSpin(user);
+                        } else {
+                            console.log(`Donación de ${user} por ${donationValue} monedas ignorada (no es 1).`);
                         }
                     }
                 } catch (error) {
                     console.error('Error al procesar mensaje de WebSocket:', error);
                 }
             };
-
             ws.onclose = () => {
                 console.log('Desconectado de TikFinity. Reintentando en 5 segundos...');
                 connectionStatus.innerHTML = `<span class="dot bg-red-500"></span><span>Reconectando...</span>`;
@@ -497,7 +541,6 @@
                 connectionStatus.classList.add('bg-red-800', 'text-red-200');
                 setTimeout(connectWebSocket, 5000); 
             };
-
             ws.onerror = (error) => {
                 console.error('Error de WebSocket:', error);
                 ws.close();
@@ -508,18 +551,48 @@
         function initializeApp() {
             const urlParams = new URLSearchParams(window.location.search);
             isSetupMode = urlParams.has('setup');
+            let optionsLoaded = false;
+
+            if (urlParams.has('wheel')) {
+                const base64String = urlParams.get('wheel');
+                try {
+                    const jsonString = atob(base64String);
+                    const importedOptions = JSON.parse(jsonString);
+                    if (Array.isArray(importedOptions) && importedOptions.length > 0) {
+                        currentWheelOptions = importedOptions;
+                        saveWheelToLocalStorage(); // Persist for convenience
+                        prepareRoulette();
+                        buttons.play.disabled = false;
+                        optionsLoaded = true;
+                    }
+                } catch (error) {
+                    console.error('Error al decodificar la ruleta desde la URL:', error);
+                }
+            }
+            
+            if (!optionsLoaded) {
+                optionsLoaded = loadWheelFromLocalStorage();
+            }
 
             if (isSetupMode) {
-                // Si la URL contiene "?setup=true", mostramos la UI normal.
                 document.body.style.backgroundColor = '#1a1a2e';
                 showScreen('home');
             } else {
-                // Si no, es modo overlay. El fondo es transparente y no se muestra nada.
                 document.body.style.backgroundColor = 'transparent';
-                buttons.backToHomeFromPlayBtn.style.display = 'none'; // Ocultar botón de volver
+                const gameUI = document.getElementById('gameUI');
+                const setupMessage = document.getElementById('setupMessage');
+                if (optionsLoaded) {
+                    gameUI.style.display = 'flex';
+                    setupMessage.style.display = 'none';
+                    donorNameDisplay.textContent = 'Esperando donación...';
+                } else {
+                    gameUI.style.display = 'none';
+                    setupMessage.style.display = 'block';
+                }
+                showScreen('play');
+                document.getElementById('spinBtn').style.display = 'none';
+                buttons.backToHomeFromPlayBtn.style.display = 'none';
             }
-            
-            loadWheelFromLocalStorage();
             connectWebSocket();
         }
 
