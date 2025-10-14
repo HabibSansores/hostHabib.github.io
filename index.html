@@ -11,7 +11,8 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #1a1a2e;
+            /* El fondo ahora es transparente por defecto para el modo overlay */
+            background-color: transparent;
             color: #e0e0e0;
             overflow: hidden;
         }
@@ -155,7 +156,7 @@
 <body>
 
     <!-- Pantalla de Inicio -->
-    <div id="homeScreen" class="screen active">
+    <div id="homeScreen" class="screen">
         <div class="absolute top-4 right-4">
             <div id="connectionStatus" class="status-indicator bg-gray-700 text-gray-300">
                 <span class="dot bg-gray-500"></span>
@@ -268,6 +269,7 @@
 
         let currentWheelOptions = [];
         let isSpinning = false;
+        let isSetupMode = false; // Flag para saber si estamos en modo configuración
         
         // --- NAVEGACIÓN ---
 
@@ -286,9 +288,7 @@
         buttons.backToHomeFromPlay.addEventListener('click', () => showScreen('home'));
         buttons.play.addEventListener('click', () => {
              if (currentWheelOptions.length > 0) {
-                showScreen('play');
-                donorNameDisplay.textContent = 'Juego Manual';
-                document.getElementById('spinBtn').style.display = 'block';
+                triggerSpin('Juego Manual');
             } else {
                 alert('Primero debes crear una ruleta en Ajustes.');
             }
@@ -418,7 +418,7 @@
             showScreen('play');
             donorNameDisplay.textContent = donor;
             spinTriggerText.textContent = `Giro por ${donor}`;
-            document.getElementById('spinBtn').style.display = (donor === 'Juego Manual') ? 'block' : 'none';
+            document.getElementById('spinBtn').style.display = (donor === 'Juego Manual' && isSetupMode) ? 'block' : 'none';
 
             const totalItems = rouletteWheel.children.length;
             const singleSectionItems = totalItems / 3;
@@ -447,15 +447,18 @@
                 winnerModal.style.display = 'flex';
             }, { once: true });
         }
-
-        buttons.spin.addEventListener('click', () => triggerSpin());
         
         buttons.closeWinnerModal.addEventListener('click', () => {
             winnerModal.style.display = 'none';
             prepareRoulette();
             rouletteWheel.style.transition = 'none';
             rouletteWheel.style.transform = `translateX(0px)`;
-            showScreen('home'); // Vuelve al inicio
+            // Si estamos en modo setup, vuelve al inicio. Si no, oculta todo.
+            if (isSetupMode) {
+                showScreen('home');
+            } else {
+                screens.play.classList.remove('active');
+            }
         });
 
         // --- LÓGICA DE WEBSOCKET (TIKFINITY) ---
@@ -475,11 +478,9 @@
                     const message = JSON.parse(event.data);
                     console.log('Mensaje de TikFinity:', message);
 
-                    // Revisa si es un evento de regalo (donación) de TikTok
                     if (message.event === 'tiktok_gift' && message.data) {
                         const { user, coins } = message.data;
-                        // ¡Condición! Girar si la donación es de 10 monedas.
-                        if (coins === 10) {
+                        if (coins === 1) {
                             console.log(`${user} ha donado ${coins} monedas. ¡Girando la ruleta!`);
                             triggerSpin(user);
                         }
@@ -494,7 +495,7 @@
                 connectionStatus.innerHTML = `<span class="dot bg-red-500"></span><span>Reconectando...</span>`;
                 connectionStatus.classList.remove('bg-green-800', 'text-green-200');
                 connectionStatus.classList.add('bg-red-800', 'text-red-200');
-                setTimeout(connectWebSocket, 5000); // Intenta reconectar
+                setTimeout(connectWebSocket, 5000); 
             };
 
             ws.onerror = (error) => {
@@ -504,9 +505,25 @@
         }
 
         // --- INICIALIZACIÓN ---
-        showScreen('home');
-        loadWheelFromLocalStorage();
-        connectWebSocket();
+        function initializeApp() {
+            const urlParams = new URLSearchParams(window.location.search);
+            isSetupMode = urlParams.has('setup');
+
+            if (isSetupMode) {
+                // Si la URL contiene "?setup=true", mostramos la UI normal.
+                document.body.style.backgroundColor = '#1a1a2e';
+                showScreen('home');
+            } else {
+                // Si no, es modo overlay. El fondo es transparente y no se muestra nada.
+                document.body.style.backgroundColor = 'transparent';
+                buttons.backToHomeFromPlayBtn.style.display = 'none'; // Ocultar botón de volver
+            }
+            
+            loadWheelFromLocalStorage();
+            connectWebSocket();
+        }
+
+        initializeApp();
 
     </script>
 </body>
