@@ -254,7 +254,6 @@
         </div>
     </div>
 
-
     <script>
         const screens = {
             home: document.getElementById('homeScreen'),
@@ -262,7 +261,7 @@
             createWheel: document.getElementById('createWheelScreen'),
             play: document.getElementById('playScreen')
         };
-
+    
         const buttons = {
             play: document.getElementById('playBtn'),
             settings: document.getElementById('settingsBtn'),
@@ -283,7 +282,7 @@
         const donorNameDisplay = document.getElementById('donorNameDisplay');
         const spinTriggerText = document.getElementById('spinTriggerText');
         const connectionStatus = document.getElementById('connectionStatus');
-
+    
         // Modals
         const alertModal = document.getElementById('alertModal');
         const alertMessage = document.getElementById('alertMessage');
@@ -292,7 +291,7 @@
         const linkModalTextarea = document.getElementById('linkModalTextarea');
         const copyLinkBtn = document.getElementById('copyLinkBtn');
         const closeLinkModalBtn = document.getElementById('closeLinkModalBtn');
-
+    
         let currentWheelOptions = [];
         let isSpinning = false;
         let isSetupMode = false;
@@ -305,7 +304,7 @@
         closeAlertModalBtn.addEventListener('click', () => {
             alertModal.style.display = 'none';
         });
-
+    
         copyLinkBtn.addEventListener('click', () => {
             linkModalTextarea.select();
             document.execCommand('copy');
@@ -315,13 +314,13 @@
             linkModal.style.display = 'none';
             showScreen('settings');
         });
-
+    
         // --- NAVEGACIÓN ---
         function showScreen(screenName) {
             Object.values(screens).forEach(screen => screen.classList.remove('active'));
             screens[screenName].classList.add('active');
         }
-
+    
         buttons.settings.addEventListener('click', () => showScreen('settings'));
         buttons.newWheel.addEventListener('click', () => {
             populateCreateScreen();
@@ -341,12 +340,12 @@
         // --- LÓGICA DE CREACIÓN Y GUARDADO DE RULETA ---
         let optionIdCounter = 0;
         const colorPalette = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6", "#d946ef"];
-
+    
         function getNextColor() {
             const usedColors = Array.from(optionsContainer.querySelectorAll('input[type="color"]')).map(input => input.value);
             return colorPalette.find(color => !usedColors.includes(color)) || colorPalette[Math.floor(Math.random() * colorPalette.length)];
         }
-
+    
         function createOptionElement({ text = '', frequency = 1, color }) {
             optionIdCounter++;
             const optionId = `option-${optionIdCounter}`;
@@ -363,7 +362,7 @@
             optionsContainer.appendChild(optionDiv);
             optionDiv.querySelector('.remove-option-btn').addEventListener('click', () => optionDiv.remove());
         }
-
+    
         function populateCreateScreen() {
             optionsContainer.innerHTML = '';
             if(currentWheelOptions.length > 0){
@@ -373,9 +372,9 @@
                 createOptionElement({});
             }
         }
-
+    
         buttons.addOption.addEventListener('click', () => createOptionElement({}));
-
+    
         buttons.saveWheel.addEventListener('click', () => {
             const options = [];
             const optionElements = optionsContainer.querySelectorAll('.flex.items-center');
@@ -387,7 +386,7 @@
                 if (!text || isNaN(frequency) || frequency < 1) { hasError = true; }
                 options.push({ text, frequency, color });
             });
-
+    
             if (hasError) {
                 showAlert('Por favor, completa todos los campos de texto y asegúrate que la frecuencia sea al menos 1.');
                 return;
@@ -400,7 +399,7 @@
             currentWheelOptions = options;
             saveWheelToLocalStorage();
             prepareRoulette();
-
+    
             const jsonString = JSON.stringify(currentWheelOptions);
             const base64String = btoa(jsonString);
             const baseURL = window.location.origin + window.location.pathname;
@@ -409,11 +408,11 @@
             linkModalTextarea.value = shareableLink;
             linkModal.style.display = 'flex';
         });
-
+    
         function saveWheelToLocalStorage() {
             localStorage.setItem('luckyWheelOptions', JSON.stringify(currentWheelOptions));
         }
-
+    
         function loadWheelFromLocalStorage() {
             const savedOptions = localStorage.getItem('luckyWheelOptions');
             if (savedOptions && savedOptions !== '[]') {
@@ -428,7 +427,7 @@
                  return false;
             }
         }
-
+    
         // --- LÓGICA DEL JUEGO DE RULETA ---
         function prepareRoulette() {
             rouletteWheel.innerHTML = '';
@@ -491,7 +490,7 @@
                 donorNameDisplay.textContent = 'Esperando donación...';
             }
         });
-
+    
         // --- LÓGICA DE WEBSOCKET (TIKFINITY) ---
         function connectWebSocket() {
             const ws = new WebSocket('ws://localhost:21213/');
@@ -512,10 +511,8 @@
                         console.log('Evento de Regalo detectado. Datos:', message.data);
                         const user = message.data.user || message.data.nickname || 'Anónimo';
                         
-                        // CORRECCIÓN AQUÍ: Añadimos 'message.data.amount' como una posible fuente del valor.
                         const donationValue = message.data.coins || message.data.diamondCount || message.data.amount;
-
-                        // Nos aseguramos que el valor exista y sea 1 (convirtiendo texto a número)
+    
                         if (donationValue && parseInt(donationValue, 10) === 1) {
                             console.log(`${user} ha donado 1 moneda. ¡Girando la ruleta!`);
                             triggerSpin(user);
@@ -539,13 +536,13 @@
                 ws.close();
             };
         }
-
+    
         // --- INICIALIZACIÓN ---
         function initializeApp() {
             const urlParams = new URLSearchParams(window.location.search);
             isSetupMode = urlParams.has('setup');
             let optionsLoaded = false;
-
+    
             if (urlParams.has('wheel')) {
                 const base64String = urlParams.get('wheel');
                 try {
@@ -566,7 +563,7 @@
             if (!optionsLoaded) {
                 optionsLoaded = loadWheelFromLocalStorage();
             }
-
+    
             if (isSetupMode) {
                 document.body.style.backgroundColor = '#1a1a2e';
                 showScreen('home');
@@ -588,9 +585,10 @@
             }
             connectWebSocket();
         }
-
-        initializeApp();
-
+    
+        // Inicia la aplicación solo cuando el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    
     </script>
 </body>
 </html>
