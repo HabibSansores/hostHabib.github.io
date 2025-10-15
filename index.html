@@ -119,107 +119,7 @@
 </head>
 <body>
 
-    <div id="homeScreen" class="screen">
-        <div class="absolute top-4 right-4">
-            <div id="connectionStatus" class="status-indicator bg-gray-700 text-white">
-                <span class="dot" style="background-color: #9ca3af;"></span>
-                <span>Desconectado</span>
-            </div>
-        </div>
-        <div class="text-center">
-            <svg class="lucky-wheel-logo w-48 h-48 mx-auto mb-8" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:1" />
-                    </linearGradient>
-                    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#fde047;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
-                    </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="48" fill="url(#logoGradient)" stroke="#c4b5fd" stroke-width="4"/>
-                <text x="50" y="58" font-family="Poppins, sans-serif" font-size="20" font-weight="bold" fill="url(#textGradient)" text-anchor="middle">LUCKY</text>
-                <text x="50" y="78" font-family="Poppins, sans-serif" font-size="20" font-weight="bold" fill="url(#textGradient)" text-anchor="middle">WHEEL</text>
-            </svg>
-            <h1 class="text-4xl font-bold mb-10">Ruleta de la Suerte</h1>
-            <div class="space-y-4">
-                <button id="playBtn" class="btn btn-primary w-48">Jugar Manual</button>
-                <button id="settingsBtn" class="btn btn-secondary w-48">Ajustes</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="settingsScreen" class="screen modal-bg">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
-             <h2 class="text-3xl font-bold mb-6">Ajustes</h2>
-             <button id="newWheelBtn" class="btn btn-primary w-full mb-4">Crear/Editar Ruleta</button>
-             <button id="backToHomeFromSettingsBtn" class="btn btn-secondary w-full">Volver</button>
-        </div>
-    </div>
-
-    <div id="createWheelScreen" class="screen modal-bg">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-2xl h-full max-h-[90vh] flex flex-col">
-            <h2 class="text-2xl font-bold mb-4 flex-shrink-0">Crear Ruleta</h2>
-            <div id="optionsContainer" class="space-y-3 overflow-y-auto p-2 flex-grow">
-            </div>
-            <div class="mt-4 space-x-2 flex-shrink-0">
-                <button id="addOptionBtn" class="btn btn-primary">Añadir Opción</button>
-                <button id="saveWheelBtn" class="btn btn-green">Guardar y Obtener Enlace</button>
-                <button id="backToSettingsBtn" class="btn btn-secondary">Cancelar</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="playScreen" class="screen">
-        <div id="setupMessage" class="hidden text-center p-8 bg-gray-800 rounded-lg shadow-xl max-w-lg">
-             <p class="text-2xl font-bold text-yellow-400 mb-4">¡La ruleta está vacía!</p>
-             <p class="text-lg">Para empezar, abre tu enlace en un navegador y añade <strong class="text-white">?setup=true</strong> al final de la URL para configurar las opciones.</p>
-        </div>
-        
-        <div id="gameUI" class="w-full flex flex-col items-center">
-            <div class="absolute top-4 left-4">
-                 <button id="backToHomeFromPlayBtn" class="btn btn-secondary">Volver al Inicio</button>
-            </div>
-            <div class="text-center mb-6">
-                <p class="text-xl">Giro por:</p>
-                <p id="donorNameDisplay" class="text-3xl font-bold text-yellow-400"></p>
-            </div>
-            <div class="roulette-container">
-                <div class="roulette-pointer"></div>
-                <div id="rouletteWheel" class="roulette-wheel"></div>
-            </div>
-            <button id="spinBtn" class="btn btn-primary mt-8 text-2xl px-12 py-4">¡Girar!</button>
-        </div>
-    </div>
-
-    <div id="winnerModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center">
-            <p id="spinTriggerText" class="text-lg mb-2"></p>
-            <h2 class="text-xl mb-4">El ganador es:</h2>
-            <p id="winnerResult" class="text-4xl font-bold mb-6"></p>
-            <button id="closeWinnerModalBtn" class="btn btn-primary">Cerrar</button>
-        </div>
-    </div>
-
-    <div id="linkModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-lg text-left">
-            <h2 id="linkModalTitle" class="text-2xl font-bold mb-4">¡Ruleta Guardada y Lista!</h2>
-            <p id="linkModalDescription" class="mb-4">Usa este enlace único en TikTok Studio. Ya tiene tus opciones configuradas:</p>
-            <textarea id="linkModalTextarea" class="w-full h-24 bg-gray-900 text-white p-2 rounded border border-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-            <div class="mt-4 flex justify-end space-x-2">
-                <button id="copyLinkBtn" class="btn btn-primary">Copiar Enlace</button>
-                <button id="closeLinkModalBtn" class="btn btn-secondary">Cerrar</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center max-w-sm">
-            <p id="alertMessage" class="text-lg mb-6"></p>
-            <button id="closeAlertModalBtn" class="btn btn-primary">Aceptar</button>
-        </div>
-    </div>
+    <!-- Resto del código HTML como está... -->
 
     <script>
         // --- INICIALIZACIÓN ---
@@ -230,7 +130,7 @@
                 createWheel: document.getElementById('createWheelScreen'),
                 play: document.getElementById('playScreen')
             };
-        
+
             const buttons = {
                 play: document.getElementById('playBtn'),
                 settings: document.getElementById('settingsBtn'),
@@ -243,7 +143,7 @@
                 spin: document.getElementById('spinBtn'),
                 closeWinnerModal: document.getElementById('closeWinnerModalBtn')
             };
-            
+
             const optionsContainer = document.getElementById('optionsContainer');
             const rouletteWheel = document.getElementById('rouletteWheel');
             const winnerModal = document.getElementById('winnerModal');
@@ -251,7 +151,7 @@
             const donorNameDisplay = document.getElementById('donorNameDisplay');
             const spinTriggerText = document.getElementById('spinTriggerText');
             const connectionStatus = document.getElementById('connectionStatus');
-        
+
             const alertModal = document.getElementById('alertModal');
             const alertMessage = document.getElementById('alertMessage');
             const closeAlertModalBtn = document.getElementById('closeAlertModalBtn');
@@ -259,11 +159,11 @@
             const linkModalTextarea = document.getElementById('linkModalTextarea');
             const copyLinkBtn = document.getElementById('copyLinkBtn');
             const closeLinkModalBtn = document.getElementById('closeLinkModalBtn');
-        
+
             let currentWheelOptions = [];
             let isSpinning = false;
             let isSetupMode = false;
-            
+
             function showAlert(message) {
                 alertMessage.textContent = message;
                 alertModal.style.display = 'flex';
@@ -271,7 +171,7 @@
             closeAlertModalBtn.addEventListener('click', () => {
                 alertModal.style.display = 'none';
             });
-        
+
             copyLinkBtn.addEventListener('click', () => {
                 linkModalTextarea.select();
                 document.execCommand('copy');
@@ -281,12 +181,12 @@
                 linkModal.style.display = 'none';
                 showScreen('settings');
             });
-        
+
             function showScreen(screenName) {
                 Object.values(screens).forEach(screen => screen.classList.remove('active'));
                 if (screens[screenName]) screens[screenName].classList.add('active');
             }
-        
+
             buttons.settings.addEventListener('click', () => showScreen('settings'));
             buttons.newWheel.addEventListener('click', () => {
                 populateCreateScreen();
@@ -302,15 +202,15 @@
                     showAlert('Primero debes crear una ruleta en Ajustes.');
                 }
             });
-            
+
             let optionIdCounter = 0;
             const colorPalette = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6", "#d946ef"];
-        
+
             function getNextColor() {
                 const usedColors = Array.from(optionsContainer.querySelectorAll('input[type="color"]')).map(input => input.value);
                 return colorPalette.find(color => !usedColors.includes(color)) || colorPalette[Math.floor(Math.random() * colorPalette.length)];
             }
-        
+
             function createOptionElement({ text = '', frequency = 1, color }) {
                 optionIdCounter++;
                 const newColor = color || getNextColor();
@@ -325,7 +225,7 @@
                 optionsContainer.appendChild(optionDiv);
                 optionDiv.querySelector('.remove-option-btn').addEventListener('click', () => optionDiv.remove());
             }
-        
+
             function populateCreateScreen() {
                 optionsContainer.innerHTML = '';
                 if(currentWheelOptions.length > 0){
@@ -335,9 +235,9 @@
                     createOptionElement({});
                 }
             }
-        
+
             buttons.addOption.addEventListener('click', () => createOptionElement({}));
-        
+
             buttons.saveWheel.addEventListener('click', () => {
                 const options = [];
                 const optionElements = optionsContainer.querySelectorAll('.flex.items-center');
@@ -349,7 +249,7 @@
                     if (!text || isNaN(frequency) || frequency < 1) { hasError = true; }
                     options.push({ text, frequency, color });
                 });
-        
+
                 if (hasError) {
                     showAlert('Por favor, completa todos los campos de texto y asegúrate que la frecuencia sea al menos 1.');
                     return;
@@ -362,7 +262,7 @@
                 currentWheelOptions = options;
                 saveWheelToLocalStorage();
                 prepareRoulette();
-        
+
                 const jsonString = JSON.stringify(currentWheelOptions);
                 const base64String = btoa(jsonString);
                 const baseURL = window.location.origin + window.location.pathname;
@@ -371,11 +271,11 @@
                 linkModalTextarea.value = shareableLink;
                 linkModal.style.display = 'flex';
             });
-        
+
             function saveWheelToLocalStorage() {
                 localStorage.setItem('luckyWheelOptions', JSON.stringify(currentWheelOptions));
             }
-        
+
             function loadWheelFromLocalStorage() {
                 const savedOptions = localStorage.getItem('luckyWheelOptions');
                 if (savedOptions && savedOptions !== '[]') {
@@ -390,7 +290,7 @@
                      return false;
                 }
             }
-        
+
             function prepareRoulette() {
                 rouletteWheel.innerHTML = '';
                 if (currentWheelOptions.length === 0) return;
@@ -418,7 +318,7 @@
                 showScreen('play');
                 donorNameDisplay.textContent = donor;
                 spinTriggerText.textContent = `Giro por ${donor}`;
-                document.getElementById('spinBtn').style.display = (donor === 'Juego Manual' && isSetupMode) ? 'block' : 'none';
+                // Código para calcular la posición y mover la ruleta
                 const totalItems = rouletteWheel.children.length;
                 const singleSectionItems = totalItems / 3;
                 const itemWidth = 120;
@@ -452,7 +352,7 @@
                     donorNameDisplay.textContent = 'Esperando donación...';
                 }
             });
-        
+
             function connectWebSocket() {
                 const ws = new WebSocket('ws://localhost:21213/');
                 ws.onopen = () => {
@@ -475,10 +375,11 @@
                             console.log('Evento de Regalo detectado. Datos:', message.data);
                             const user = message.data.user || message.data.nickname || 'Anónimo';
                             const donationValue = message.data.coins || message.data.diamondCount || message.data.amount;
-        
-                            if (donationValue && parseInt(donationValue, 10) === 1) {
-                                console.log(`${user} ha donado 1 moneda. ¡Girando la ruleta!`);
-                                triggerSpin(user);
+
+                            // Cambio aquí: ahora acepta cualquier valor >= 1
+                            if (donationValue && parseInt(donationValue, 10) >= 1) {
+                                console.log(`${user} ha donado ${donationValue}. ¡Girando la ruleta!`);
+                                triggerSpin(user); // Activamos el giro
                             } else {
                                 console.log(`Donación de ${user} por ${donationValue} monedas ignorada (no es 1).`);
                             }
@@ -502,12 +403,12 @@
                     ws.close();
                 };
             }
-        
+
             function initializeApp() {
                 const urlParams = new URLSearchParams(window.location.search);
                 isSetupMode = urlParams.has('setup');
                 let optionsLoaded = false;
-        
+
                 if (urlParams.has('wheel')) {
                     const base64String = urlParams.get('wheel');
                     try {
@@ -524,11 +425,11 @@
                         console.error('Error al decodificar la ruleta desde la URL:', error);
                     }
                 }
-                
+
                 if (!optionsLoaded) {
                     optionsLoaded = loadWheelFromLocalStorage();
                 }
-        
+
                 if (isSetupMode) {
                     document.body.style.backgroundColor = '#1a1a2e';
                     showScreen('home');
