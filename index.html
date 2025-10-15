@@ -4,158 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lucky Wheel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: transparent;
-            color: #e0e0e0;
-            overflow: hidden;
-        }
-        .screen {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            padding: 1rem;
-            box-sizing: border-box;
-            transition: opacity 0.3s ease;
-        }
-        .screen.active {
-            display: flex;
-        }
-        .btn {
-            padding: 0.75rem 2rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .btn-primary {
-            background-color: #4f46e5;
-            color: white;
-        }
-        .btn-primary:hover:not(:disabled) {
-            background-color: #4338ca;
-        }
-        .btn-secondary {
-            background-color: #374151;
-            color: white;
-        }
-         .btn-secondary:hover {
-            background-color: #4b5563;
-        }
-        .btn-green {
-            background: linear-gradient(180deg, #4ade80, #22c55e);
-            color: #1e293b;
-            border: 1px solid #86efac;
-        }
-        .btn-green:hover {
-             background: linear-gradient(180deg, #86efac, #4ade80);
-        }
-        .modal-bg {
-            background-color: rgba(26, 26, 46, 0.85);
-        }
-        .lucky-wheel-logo {
-            filter: drop-shadow(0 0 1rem rgba(139, 92, 246, 0.6));
-        }
-        .roulette-container {
-            width: 100%;
-            max-width: 90vw;
-            height: 120px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 1rem;
-            position: relative;
-            overflow: hidden;
-            border: 3px solid #4f46e5;
-            box-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
-        }
-        .roulette-pointer {
-            position: absolute;
-            top: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 20px solid #facc15;
-            z-index: 10;
-        }
-        .roulette-wheel {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            display: flex;
-            will-change: transform;
-            transition: transform 7s cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-        .roulette-item {
-            width: 120px;
-            height: 120px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            flex-shrink: 0;
-            padding: 5px;
-            text-align: center;
-            box-sizing: border-box;
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
-        .winner-modal {
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        .status-indicator {
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-        }
-        .status-indicator .dot {
-            width: 0.75rem;
-            height: 0.75rem;
-            border-radius: 50%;
-            margin-right: 0.5rem;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        /* Estilos base y pre-generados de Tailwind CSS */
+        *,:after,:before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}
+        html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Poppins,sans-serif;font-feature-settings:normal}
+        body{margin:0;line-height:inherit; font-family: 'Poppins', sans-serif; background-color: transparent; color: #e0e0e0; overflow: hidden;}
+        h1,h2,p{margin:0}
+        button{color:inherit;font-family:inherit;font-size:100%;font-weight:inherit;line-height:inherit;margin:0;padding:0;text-transform:none; background-color:transparent;background-image:none;cursor:pointer}
+        button:focus:outline{outline:1px dotted;outline:5px auto -webkit-focus-ring-color}
+        textarea{resize:vertical}
+        input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}
+        svg{display:block;vertical-align:middle}
+        .fixed{position:fixed}
+        .absolute{position:absolute}
+        .inset-0{top:0;right:0;bottom:0;left:0}
+        .top-4{top:1rem}
+        .right-4{right:1rem}
+        .left-4{left:1rem}
+        .z-10{z-index:10}
+        .mx-auto{margin-left:auto;margin-right:auto}
+        .mb-10{margin-bottom:2.5rem}
+        .mb-2{margin-bottom:.5rem}
+        .mb-4{margin-bottom:1rem}
+        .mb-6{margin-bottom:1.5rem}
+        .mb-8{margin-bottom:2rem}
+        .mr-2{margin-right:.5rem}
+        .mt-4{margin-top:1rem}
+        .mt-8{margin-top:2rem}
+        .flex{display:flex}
+        .hidden{display:none}
+        .h-10{height:2.5rem}
+        .h-24{height:6rem}
+        .h-48{height:12rem}
+        .h-full{height:100%}
+        .w-10{width:2.5rem}
+        .w-20{width:5rem}
+        .w-48{width:12rem}
+        .w-full{width:100%}
+        .max-w-2xl{max-width:42rem}
+        .max-w-lg{max-width:32rem}
+        .max-w-md{max-width:28rem}
+        .max-w-sm{max-width:24rem}
+        .flex-col{flex-direction:column}
+        .flex-grow{flex-grow:1}
+        .flex-shrink-0{flex-shrink:0}
+        .items-center{align-items:center}
+        .justify-center{justify-content:center}
+        .justify-end{justify-content:flex-end}
+        .space-x-2>:not([hidden])~:not([hidden]){--tw-space-x-reverse:0;margin-right:calc(.5rem * var(--tw-space-x-reverse));margin-left:calc(.5rem * (1 - var(--tw-space-x-reverse)))}
+        .space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem * var(--tw-space-y-reverse))}
+        .space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}
+        .rounded{border-radius:.25rem}
+        .rounded-lg{border-radius:.5rem}
+        .border{border-width:1px}
+        .border-gray-500{--tw-border-opacity:1;border-color:rgb(107 114 128 / var(--tw-border-opacity))}
+        .border-gray-600{--tw-border-opacity:1;border-color:rgb(75 85 99 / var(--tw-border-opacity))}
+        .bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0 / var(--tw-bg-opacity))}
+        .bg-gray-600{--tw-bg-opacity:1;background-color:rgb(75 85 99 / var(--tw-bg-opacity))}
+        .bg-gray-700{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity))}
+        .bg-gray-800{--tw-bg-opacity:1;background-color:rgb(31 41 55 / var(--tw-bg-opacity))}
+        .bg-gray-900{--tw-bg-opacity:1;background-color:rgb(17 24 39 / var(--tw-bg-opacity))}
+        .bg-opacity-75{--tw-bg-opacity:.75}
+        .bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38 / var(--tw-bg-opacity))}
+        .bg-red-600:hover{--tw-bg-opacity:1;background-color:rgb(220 38 38 / var(--tw-bg-opacity))}
+        .p-1{padding:.25rem}
+        .p-2{padding:.5rem}
+        .p-6{padding:1.5rem}
+        .p-8{padding:2rem}
+        .px-12{padding-left:3rem;padding-right:3rem}
+        .py-4{padding-top:1rem;padding-bottom:1rem}
+        .text-center{text-align:center}
+        .text-left{text-align:left}
+        .font-bold{font-weight:700}
+        .text-2xl{font-size:1.5rem;line-height:2rem}
+        .text-3xl{font-size:1.875rem;line-height:2.25rem}
+        .text-4xl{font-size:2.25rem;line-height:2.5rem}
+        .text-lg{font-size:1.125rem;line-height:1.75rem}
+        .text-xl{font-size:1.25rem;line-height:1.75rem}
+        .text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity))}
+        .text-yellow-400{--tw-text-opacity:1;color:rgb(250 204 21 / var(--tw-text-opacity))}
+        .shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / .25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}
+        .shadow-xl{--tw-shadow:0 20px 25px -5px rgb(0 0 0 / .1),0 8px 10px -6px rgb(0 0 0 / .1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color),0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}
+        .resize-none{resize:none}
+        .focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}
+        .focus\:ring-2:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}
+        .focus\:ring-indigo-500:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(99 102 241 / var(--tw-ring-opacity))}
+        
+        /* Estilos personalizados */
+        .screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100vh; justify-content: center; align-items: center; flex-direction: column; padding: 1rem; box-sizing: border-box; transition: opacity 0.3s ease; }
+        .screen.active { display: flex; }
+        .btn { padding: 0.75rem 2rem; border-radius: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); cursor: pointer; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background-color: #4f46e5; color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: #4338ca; }
+        .btn-secondary { background-color: #374151; color: white; }
+        .btn-secondary:hover { background-color: #4b5563; }
+        .btn-green { background: linear-gradient(180deg, #4ade80, #22c55e); color: #1e293b; border: 1px solid #86efac; }
+        .btn-green:hover { background: linear-gradient(180deg, #86efac, #4ade80); }
+        .modal-bg { background-color: rgba(26, 26, 46, 0.85); }
+        .lucky-wheel-logo { filter: drop-shadow(0 0 1rem rgba(139, 92, 246, 0.6)); }
+        .roulette-container { width: 100%; max-width: 90vw; height: 120px; background: rgba(0,0,0,0.2); border-radius: 1rem; position: relative; overflow: hidden; border: 3px solid #4f46e5; box-shadow: 0 0 20px rgba(79, 70, 229, 0.5); }
+        .roulette-pointer { position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 20px solid #facc15; z-index: 10; }
+        .roulette-wheel { position: absolute; top: 0; left: 0; height: 100%; display: flex; will-change: transform; transition: transform 7s cubic-bezier(0.25, 0.1, 0.25, 1); }
+        .roulette-item { width: 120px; height: 120px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.1rem; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); flex-shrink: 0; padding: 5px; text-align: center; box-sizing: border-box; border-right: 1px solid rgba(255,255,255,0.1); }
+        .winner-modal { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .status-indicator { padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; display: inline-flex; align-items: center; }
+        .status-indicator .dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; margin-right: 0.5rem; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
     <div id="homeScreen" class="screen">
         <div class="absolute top-4 right-4">
-            <div id="connectionStatus" class="status-indicator bg-gray-700 text-gray-300">
-                <span class="dot bg-gray-500"></span>
+            <div id="connectionStatus" class="status-indicator bg-gray-700 text-white">
+                <span class="dot" style="background-color: #9ca3af;"></span>
                 <span>Desconectado</span>
             </div>
         </div>
@@ -175,7 +142,7 @@
                 <text x="50" y="58" font-family="Poppins, sans-serif" font-size="20" font-weight="bold" fill="url(#textGradient)" text-anchor="middle">LUCKY</text>
                 <text x="50" y="78" font-family="Poppins, sans-serif" font-size="20" font-weight="bold" fill="url(#textGradient)" text-anchor="middle">WHEEL</text>
             </svg>
-            <h1 class="text-4xl font-bold mb-10 text-shadow">Ruleta de la Suerte</h1>
+            <h1 class="text-4xl font-bold mb-10">Ruleta de la Suerte</h1>
             <div class="space-y-4">
                 <button id="playBtn" class="btn btn-primary w-48">Jugar Manual</button>
                 <button id="settingsBtn" class="btn btn-secondary w-48">Ajustes</button>
@@ -195,7 +162,7 @@
         <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-2xl h-full max-h-[90vh] flex flex-col">
             <h2 class="text-2xl font-bold mb-4 flex-shrink-0">Crear Ruleta</h2>
             <div id="optionsContainer" class="space-y-3 overflow-y-auto p-2 flex-grow">
-                </div>
+            </div>
             <div class="mt-4 space-x-2 flex-shrink-0">
                 <button id="addOptionBtn" class="btn btn-primary">Añadir Opción</button>
                 <button id="saveWheelBtn" class="btn btn-green">Guardar y Obtener Enlace</button>
@@ -255,340 +222,337 @@
     </div>
 
     <script>
-        const screens = {
-            home: document.getElementById('homeScreen'),
-            settings: document.getElementById('settingsScreen'),
-            createWheel: document.getElementById('createWheelScreen'),
-            play: document.getElementById('playScreen')
-        };
-    
-        const buttons = {
-            play: document.getElementById('playBtn'),
-            settings: document.getElementById('settingsBtn'),
-            newWheel: document.getElementById('newWheelBtn'),
-            backToHomeFromSettings: document.getElementById('backToHomeFromSettingsBtn'),
-            addOption: document.getElementById('addOptionBtn'),
-            saveWheel: document.getElementById('saveWheelBtn'),
-            backToSettings: document.getElementById('backToSettingsBtn'),
-            backToHomeFromPlay: document.getElementById('backToHomeFromPlayBtn'),
-            spin: document.getElementById('spinBtn'),
-            closeWinnerModal: document.getElementById('closeWinnerModalBtn')
-        };
-        
-        const optionsContainer = document.getElementById('optionsContainer');
-        const rouletteWheel = document.getElementById('rouletteWheel');
-        const winnerModal = document.getElementById('winnerModal');
-        const winnerResult = document.getElementById('winnerResult');
-        const donorNameDisplay = document.getElementById('donorNameDisplay');
-        const spinTriggerText = document.getElementById('spinTriggerText');
-        const connectionStatus = document.getElementById('connectionStatus');
-    
-        // Modals
-        const alertModal = document.getElementById('alertModal');
-        const alertMessage = document.getElementById('alertMessage');
-        const closeAlertModalBtn = document.getElementById('closeAlertModalBtn');
-        const linkModal = document.getElementById('linkModal');
-        const linkModalTextarea = document.getElementById('linkModalTextarea');
-        const copyLinkBtn = document.getElementById('copyLinkBtn');
-        const closeLinkModalBtn = document.getElementById('closeLinkModalBtn');
-    
-        let currentWheelOptions = [];
-        let isSpinning = false;
-        let isSetupMode = false;
-        
-        // --- LÓGICA DE MODALES ---
-        function showAlert(message) {
-            alertMessage.textContent = message;
-            alertModal.style.display = 'flex';
-        }
-        closeAlertModalBtn.addEventListener('click', () => {
-            alertModal.style.display = 'none';
-        });
-    
-        copyLinkBtn.addEventListener('click', () => {
-            linkModalTextarea.select();
-            document.execCommand('copy');
-            showAlert('¡Enlace copiado al portapapeles!');
-        });
-        closeLinkModalBtn.addEventListener('click', () => {
-            linkModal.style.display = 'none';
-            showScreen('settings');
-        });
-    
-        // --- NAVEGACIÓN ---
-        function showScreen(screenName) {
-            Object.values(screens).forEach(screen => screen.classList.remove('active'));
-            screens[screenName].classList.add('active');
-        }
-    
-        buttons.settings.addEventListener('click', () => showScreen('settings'));
-        buttons.newWheel.addEventListener('click', () => {
-            populateCreateScreen();
-            showScreen('createWheel');
-        });
-        buttons.backToHomeFromSettings.addEventListener('click', () => showScreen('home'));
-        buttons.backToSettings.addEventListener('click', () => showScreen('settings'));
-        buttons.backToHomeFromPlay.addEventListener('click', () => showScreen('home'));
-        buttons.play.addEventListener('click', () => {
-             if (currentWheelOptions.length > 0) {
-                triggerSpin('Juego Manual');
-            } else {
-                showAlert('Primero debes crear una ruleta en Ajustes.');
-            }
-        });
-        
-        // --- LÓGICA DE CREACIÓN Y GUARDADO DE RULETA ---
-        let optionIdCounter = 0;
-        const colorPalette = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6", "#d946ef"];
-    
-        function getNextColor() {
-            const usedColors = Array.from(optionsContainer.querySelectorAll('input[type="color"]')).map(input => input.value);
-            return colorPalette.find(color => !usedColors.includes(color)) || colorPalette[Math.floor(Math.random() * colorPalette.length)];
-        }
-    
-        function createOptionElement({ text = '', frequency = 1, color }) {
-            optionIdCounter++;
-            const optionId = `option-${optionIdCounter}`;
-            const newColor = color || getNextColor();
-            const optionDiv = document.createElement('div');
-            optionDiv.id = optionId;
-            optionDiv.className = 'flex items-center space-x-2 bg-gray-700 p-2 rounded';
-            optionDiv.innerHTML = `
-                <input type="text" value="${text}" placeholder="Texto de la opción" class="text-input flex-grow bg-gray-600 rounded p-2 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white">
-                <input type="number" value="${frequency}" min="1" class="freq-input w-20 bg-gray-600 rounded p-2 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white">
-                <input type="color" value="${newColor}" class="color-input w-10 h-10 p-1 bg-gray-600 rounded border border-gray-500 cursor-pointer">
-                <button class="remove-option-btn bg-red-600 hover:bg-red-700 text-white font-bold p-2 rounded">&times;</button>
-            `;
-            optionsContainer.appendChild(optionDiv);
-            optionDiv.querySelector('.remove-option-btn').addEventListener('click', () => optionDiv.remove());
-        }
-    
-        function populateCreateScreen() {
-            optionsContainer.innerHTML = '';
-            if(currentWheelOptions.length > 0){
-                currentWheelOptions.forEach(option => createOptionElement(option));
-            } else {
-                createOptionElement({});
-                createOptionElement({});
-            }
-        }
-    
-        buttons.addOption.addEventListener('click', () => createOptionElement({}));
-    
-        buttons.saveWheel.addEventListener('click', () => {
-            const options = [];
-            const optionElements = optionsContainer.querySelectorAll('.flex.items-center');
-            let hasError = false;
-            optionElements.forEach(el => {
-                const text = el.querySelector('.text-input').value.trim();
-                const frequency = parseInt(el.querySelector('.freq-input').value, 10);
-                const color = el.querySelector('.color-input').value;
-                if (!text || isNaN(frequency) || frequency < 1) { hasError = true; }
-                options.push({ text, frequency, color });
-            });
-    
-            if (hasError) {
-                showAlert('Por favor, completa todos los campos de texto y asegúrate que la frecuencia sea al menos 1.');
-                return;
-            }
-            if (options.length < 2) {
-                showAlert('Necesitas al menos 2 opciones para crear la ruleta.');
-                return;
-            }
-            
-            currentWheelOptions = options;
-            saveWheelToLocalStorage();
-            prepareRoulette();
-    
-            const jsonString = JSON.stringify(currentWheelOptions);
-            const base64String = btoa(jsonString);
-            const baseURL = window.location.origin + window.location.pathname;
-            const shareableLink = `${baseURL}?wheel=${base64String}`;
-            
-            linkModalTextarea.value = shareableLink;
-            linkModal.style.display = 'flex';
-        });
-    
-        function saveWheelToLocalStorage() {
-            localStorage.setItem('luckyWheelOptions', JSON.stringify(currentWheelOptions));
-        }
-    
-        function loadWheelFromLocalStorage() {
-            const savedOptions = localStorage.getItem('luckyWheelOptions');
-            if (savedOptions && savedOptions !== '[]') {
-                currentWheelOptions = JSON.parse(savedOptions);
-                prepareRoulette();
-                buttons.play.disabled = false;
-                return true;
-            } else {
-                 buttons.play.disabled = true;
-                 currentWheelOptions = [];
-                 prepareRoulette();
-                 return false;
-            }
-        }
-    
-        // --- LÓGICA DEL JUEGO DE RULETA ---
-        function prepareRoulette() {
-            rouletteWheel.innerHTML = '';
-            if (currentWheelOptions.length === 0) return;
-            let weightedList = [];
-            currentWheelOptions.forEach(option => {
-                for (let i = 0; i < option.frequency; i++) { weightedList.push(option); }
-            });
-            for (let i = weightedList.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [weightedList[i], weightedList[j]] = [weightedList[j], weightedList[i]];
-            }
-            const wheelItems = [...weightedList, ...weightedList, ...weightedList]; 
-            wheelItems.forEach(item => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'roulette-item';
-                itemEl.textContent = item.text;
-                itemEl.style.backgroundColor = item.color;
-                rouletteWheel.appendChild(itemEl);
-            });
-        }
-        
-        function triggerSpin(donor = 'Juego Manual') {
-            if (isSpinning || currentWheelOptions.length < 2) return;
-            isSpinning = true;
-            showScreen('play');
-            donorNameDisplay.textContent = donor;
-            spinTriggerText.textContent = `Giro por ${donor}`;
-            document.getElementById('spinBtn').style.display = (donor === 'Juego Manual' && isSetupMode) ? 'block' : 'none';
-            const totalItems = rouletteWheel.children.length;
-            const singleSectionItems = totalItems / 3;
-            const itemWidth = 120;
-            const winnerIndexInSection = Math.floor(Math.random() * singleSectionItems);
-            const targetIndex = singleSectionItems + winnerIndexInSection;
-            const randomOffset = (Math.random() - 0.5) * itemWidth * 0.8;
-            const targetPosition = (targetIndex * itemWidth) - (rouletteWheel.parentElement.clientWidth / 2) + (itemWidth / 2) + randomOffset;
-            rouletteWheel.style.transition = 'none';
-            rouletteWheel.style.transform = `translateX(0px)`;
-            setTimeout(() => {
-                rouletteWheel.style.transition = 'transform 7s cubic-bezier(0.25, 0.1, 0.25, 1)';
-                rouletteWheel.style.transform = `translateX(-${targetPosition}px)`;
-            }, 50);
-            rouletteWheel.addEventListener('transitionend', () => {
-                isSpinning = false;
-                const winnerOption = rouletteWheel.children[targetIndex];
-                winnerResult.textContent = winnerOption.textContent;
-                winnerResult.style.color = winnerOption.style.backgroundColor;
-                winnerModal.style.display = 'flex';
-            }, { once: true });
-        }
-        
-        buttons.closeWinnerModal.addEventListener('click', () => {
-            winnerModal.style.display = 'none';
-            prepareRoulette();
-            rouletteWheel.style.transition = 'none';
-            rouletteWheel.style.transform = `translateX(0px)`;
-            if (isSetupMode) {
-                showScreen('home');
-            } else {
-                donorNameDisplay.textContent = 'Esperando donación...';
-            }
-        });
-    
-        // --- LÓGICA DE WEBSOCKET (TIKFINITY) ---
-        function connectWebSocket() {
-            const ws = new WebSocket('ws://localhost:21213/');
-            ws.onopen = () => {
-                console.log('Conectado a TikFinity.');
-                connectionStatus.innerHTML = `<span class="dot bg-green-500"></span><span>Conectado</span>`;
-                connectionStatus.classList.remove('bg-gray-700', 'text-gray-300');
-                connectionStatus.classList.add('bg-green-800', 'text-green-200');
-            };
-            ws.onmessage = (event) => {
-                console.log("--- MENSAJE CRUDO RECIBIDO DE TIKFINITY ---");
-                console.log(event.data);
-                console.log("-----------------------------------------");
-                try {
-                    const message = JSON.parse(event.data);
-                    console.log('Mensaje procesado:', message);
-                    if (message.event === 'tiktok_gift' && message.data) {
-                        console.log('Evento de Regalo detectado. Datos:', message.data);
-                        const user = message.data.user || message.data.nickname || 'Anónimo';
-                        
-                        const donationValue = message.data.coins || message.data.diamondCount || message.data.amount;
-    
-                        if (donationValue && parseInt(donationValue, 10) === 1) {
-                            console.log(`${user} ha donado 1 moneda. ¡Girando la ruleta!`);
-                            triggerSpin(user);
-                        } else {
-                            console.log(`Donación de ${user} por ${donationValue} monedas ignorada (no es 1).`);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error al procesar mensaje de WebSocket:', error);
-                }
-            };
-            ws.onclose = () => {
-                console.log('Desconectado de TikFinity. Reintentando en 5 segundos...');
-                connectionStatus.innerHTML = `<span class="dot bg-red-500"></span><span>Reconectando...</span>`;
-                connectionStatus.classList.remove('bg-green-800', 'text-green-200');
-                connectionStatus.classList.add('bg-red-800', 'text-red-200');
-                setTimeout(connectWebSocket, 5000); 
-            };
-            ws.onerror = (error) => {
-                console.error('Error de WebSocket:', error);
-                ws.close();
-            };
-        }
-    
         // --- INICIALIZACIÓN ---
-        function initializeApp() {
-            const urlParams = new URLSearchParams(window.location.search);
-            isSetupMode = urlParams.has('setup');
-            let optionsLoaded = false;
-    
-            if (urlParams.has('wheel')) {
-                const base64String = urlParams.get('wheel');
-                try {
-                    const jsonString = atob(base64String);
-                    const importedOptions = JSON.parse(jsonString);
-                    if (Array.isArray(importedOptions) && importedOptions.length > 0) {
-                        currentWheelOptions = importedOptions;
-                        saveWheelToLocalStorage(); // Persist for convenience
-                        prepareRoulette();
-                        buttons.play.disabled = false;
-                        optionsLoaded = true;
-                    }
-                } catch (error) {
-                    console.error('Error al decodificar la ruleta desde la URL:', error);
+        document.addEventListener('DOMContentLoaded', () => {
+            const screens = {
+                home: document.getElementById('homeScreen'),
+                settings: document.getElementById('settingsScreen'),
+                createWheel: document.getElementById('createWheelScreen'),
+                play: document.getElementById('playScreen')
+            };
+        
+            const buttons = {
+                play: document.getElementById('playBtn'),
+                settings: document.getElementById('settingsBtn'),
+                newWheel: document.getElementById('newWheelBtn'),
+                backToHomeFromSettings: document.getElementById('backToHomeFromSettingsBtn'),
+                addOption: document.getElementById('addOptionBtn'),
+                saveWheel: document.getElementById('saveWheelBtn'),
+                backToSettings: document.getElementById('backToSettingsBtn'),
+                backToHomeFromPlay: document.getElementById('backToHomeFromPlayBtn'),
+                spin: document.getElementById('spinBtn'),
+                closeWinnerModal: document.getElementById('closeWinnerModalBtn')
+            };
+            
+            const optionsContainer = document.getElementById('optionsContainer');
+            const rouletteWheel = document.getElementById('rouletteWheel');
+            const winnerModal = document.getElementById('winnerModal');
+            const winnerResult = document.getElementById('winnerResult');
+            const donorNameDisplay = document.getElementById('donorNameDisplay');
+            const spinTriggerText = document.getElementById('spinTriggerText');
+            const connectionStatus = document.getElementById('connectionStatus');
+        
+            const alertModal = document.getElementById('alertModal');
+            const alertMessage = document.getElementById('alertMessage');
+            const closeAlertModalBtn = document.getElementById('closeAlertModalBtn');
+            const linkModal = document.getElementById('linkModal');
+            const linkModalTextarea = document.getElementById('linkModalTextarea');
+            const copyLinkBtn = document.getElementById('copyLinkBtn');
+            const closeLinkModalBtn = document.getElementById('closeLinkModalBtn');
+        
+            let currentWheelOptions = [];
+            let isSpinning = false;
+            let isSetupMode = false;
+            
+            function showAlert(message) {
+                alertMessage.textContent = message;
+                alertModal.style.display = 'flex';
+            }
+            closeAlertModalBtn.addEventListener('click', () => {
+                alertModal.style.display = 'none';
+            });
+        
+            copyLinkBtn.addEventListener('click', () => {
+                linkModalTextarea.select();
+                document.execCommand('copy');
+                showAlert('¡Enlace copiado al portapapeles!');
+            });
+            closeLinkModalBtn.addEventListener('click', () => {
+                linkModal.style.display = 'none';
+                showScreen('settings');
+            });
+        
+            function showScreen(screenName) {
+                Object.values(screens).forEach(screen => screen.classList.remove('active'));
+                if (screens[screenName]) screens[screenName].classList.add('active');
+            }
+        
+            buttons.settings.addEventListener('click', () => showScreen('settings'));
+            buttons.newWheel.addEventListener('click', () => {
+                populateCreateScreen();
+                showScreen('createWheel');
+            });
+            buttons.backToHomeFromSettings.addEventListener('click', () => showScreen('home'));
+            buttons.backToSettings.addEventListener('click', () => showScreen('settings'));
+            buttons.backToHomeFromPlay.addEventListener('click', () => showScreen('home'));
+            buttons.play.addEventListener('click', () => {
+                 if (currentWheelOptions.length > 0) {
+                    triggerSpin('Juego Manual');
+                } else {
+                    showAlert('Primero debes crear una ruleta en Ajustes.');
                 }
+            });
+            
+            let optionIdCounter = 0;
+            const colorPalette = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6", "#d946ef"];
+        
+            function getNextColor() {
+                const usedColors = Array.from(optionsContainer.querySelectorAll('input[type="color"]')).map(input => input.value);
+                return colorPalette.find(color => !usedColors.includes(color)) || colorPalette[Math.floor(Math.random() * colorPalette.length)];
+            }
+        
+            function createOptionElement({ text = '', frequency = 1, color }) {
+                optionIdCounter++;
+                const newColor = color || getNextColor();
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'flex items-center space-x-2 bg-gray-700 p-2 rounded';
+                optionDiv.innerHTML = `
+                    <input type="text" value="${text}" placeholder="Texto de la opción" class="text-input flex-grow bg-gray-600 rounded p-2 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white">
+                    <input type="number" value="${frequency}" min="1" class="freq-input w-20 bg-gray-600 rounded p-2 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white">
+                    <input type="color" value="${newColor}" class="color-input w-10 h-10 p-1 bg-gray-600 rounded border border-gray-500 cursor-pointer">
+                    <button class="remove-option-btn bg-red-600 hover:bg-red-700 text-white font-bold p-2 rounded">&times;</button>
+                `;
+                optionsContainer.appendChild(optionDiv);
+                optionDiv.querySelector('.remove-option-btn').addEventListener('click', () => optionDiv.remove());
+            }
+        
+            function populateCreateScreen() {
+                optionsContainer.innerHTML = '';
+                if(currentWheelOptions.length > 0){
+                    currentWheelOptions.forEach(option => createOptionElement(option));
+                } else {
+                    createOptionElement({});
+                    createOptionElement({});
+                }
+            }
+        
+            buttons.addOption.addEventListener('click', () => createOptionElement({}));
+        
+            buttons.saveWheel.addEventListener('click', () => {
+                const options = [];
+                const optionElements = optionsContainer.querySelectorAll('.flex.items-center');
+                let hasError = false;
+                optionElements.forEach(el => {
+                    const text = el.querySelector('.text-input').value.trim();
+                    const frequency = parseInt(el.querySelector('.freq-input').value, 10);
+                    const color = el.querySelector('.color-input').value;
+                    if (!text || isNaN(frequency) || frequency < 1) { hasError = true; }
+                    options.push({ text, frequency, color });
+                });
+        
+                if (hasError) {
+                    showAlert('Por favor, completa todos los campos de texto y asegúrate que la frecuencia sea al menos 1.');
+                    return;
+                }
+                if (options.length < 2) {
+                    showAlert('Necesitas al menos 2 opciones para crear la ruleta.');
+                    return;
+                }
+                
+                currentWheelOptions = options;
+                saveWheelToLocalStorage();
+                prepareRoulette();
+        
+                const jsonString = JSON.stringify(currentWheelOptions);
+                const base64String = btoa(jsonString);
+                const baseURL = window.location.origin + window.location.pathname;
+                const shareableLink = `${baseURL}?wheel=${base64String}`;
+                
+                linkModalTextarea.value = shareableLink;
+                linkModal.style.display = 'flex';
+            });
+        
+            function saveWheelToLocalStorage() {
+                localStorage.setItem('luckyWheelOptions', JSON.stringify(currentWheelOptions));
+            }
+        
+            function loadWheelFromLocalStorage() {
+                const savedOptions = localStorage.getItem('luckyWheelOptions');
+                if (savedOptions && savedOptions !== '[]') {
+                    currentWheelOptions = JSON.parse(savedOptions);
+                    prepareRoulette();
+                    buttons.play.disabled = false;
+                    return true;
+                } else {
+                     buttons.play.disabled = true;
+                     currentWheelOptions = [];
+                     prepareRoulette();
+                     return false;
+                }
+            }
+        
+            function prepareRoulette() {
+                rouletteWheel.innerHTML = '';
+                if (currentWheelOptions.length === 0) return;
+                let weightedList = [];
+                currentWheelOptions.forEach(option => {
+                    for (let i = 0; i < option.frequency; i++) { weightedList.push(option); }
+                });
+                for (let i = weightedList.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [weightedList[i], weightedList[j]] = [weightedList[j], weightedList[i]];
+                }
+                const wheelItems = [...weightedList, ...weightedList, ...weightedList]; 
+                wheelItems.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'roulette-item';
+                    itemEl.textContent = item.text;
+                    itemEl.style.backgroundColor = item.color;
+                    rouletteWheel.appendChild(itemEl);
+                });
             }
             
-            if (!optionsLoaded) {
-                optionsLoaded = loadWheelFromLocalStorage();
-            }
-    
-            if (isSetupMode) {
-                document.body.style.backgroundColor = '#1a1a2e';
-                showScreen('home');
-            } else {
-                document.body.style.backgroundColor = 'transparent';
-                const gameUI = document.getElementById('gameUI');
-                const setupMessage = document.getElementById('setupMessage');
-                if (optionsLoaded) {
-                    gameUI.style.display = 'flex';
-                    setupMessage.style.display = 'none';
-                    donorNameDisplay.textContent = 'Esperando donación...';
-                } else {
-                    gameUI.style.display = 'none';
-                    setupMessage.style.display = 'block';
-                }
+            function triggerSpin(donor = 'Juego Manual') {
+                if (isSpinning || currentWheelOptions.length < 2) return;
+                isSpinning = true;
                 showScreen('play');
-                document.getElementById('spinBtn').style.display = 'none';
-                buttons.backToHomeFromPlayBtn.style.display = 'none';
+                donorNameDisplay.textContent = donor;
+                spinTriggerText.textContent = `Giro por ${donor}`;
+                document.getElementById('spinBtn').style.display = (donor === 'Juego Manual' && isSetupMode) ? 'block' : 'none';
+                const totalItems = rouletteWheel.children.length;
+                const singleSectionItems = totalItems / 3;
+                const itemWidth = 120;
+                const winnerIndexInSection = Math.floor(Math.random() * singleSectionItems);
+                const targetIndex = singleSectionItems + winnerIndexInSection;
+                const randomOffset = (Math.random() - 0.5) * itemWidth * 0.8;
+                const targetPosition = (targetIndex * itemWidth) - (rouletteWheel.parentElement.clientWidth / 2) + (itemWidth / 2) + randomOffset;
+                rouletteWheel.style.transition = 'none';
+                rouletteWheel.style.transform = `translateX(0px)`;
+                setTimeout(() => {
+                    rouletteWheel.style.transition = 'transform 7s cubic-bezier(0.25, 0.1, 0.25, 1)';
+                    rouletteWheel.style.transform = `translateX(-${targetPosition}px)`;
+                }, 50);
+                rouletteWheel.addEventListener('transitionend', () => {
+                    isSpinning = false;
+                    const winnerOption = rouletteWheel.children[targetIndex];
+                    winnerResult.textContent = winnerOption.textContent;
+                    winnerResult.style.color = winnerOption.style.backgroundColor;
+                    winnerModal.style.display = 'flex';
+                }, { once: true });
             }
-            connectWebSocket();
-        }
-    
-        // Inicia la aplicación solo cuando el DOM esté completamente cargado
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    
+            
+            buttons.closeWinnerModal.addEventListener('click', () => {
+                winnerModal.style.display = 'none';
+                prepareRoulette();
+                rouletteWheel.style.transition = 'none';
+                rouletteWheel.style.transform = `translateX(0px)`;
+                if (isSetupMode) {
+                    showScreen('home');
+                } else {
+                    donorNameDisplay.textContent = 'Esperando donación...';
+                }
+            });
+        
+            function connectWebSocket() {
+                const ws = new WebSocket('ws://localhost:21213/');
+                ws.onopen = () => {
+                    console.log('Conectado a TikFinity.');
+                    const statusDot = connectionStatus.querySelector('.dot');
+                    const statusText = connectionStatus.querySelector('span:last-child');
+                    connectionStatus.style.backgroundColor = '#166534'; // bg-green-800
+                    connectionStatus.style.color = '#dcfce7'; // text-green-200
+                    statusDot.style.backgroundColor = '#4ade80'; // bg-green-500
+                    statusText.textContent = 'Conectado';
+                };
+                ws.onmessage = (event) => {
+                    console.log("--- MENSAJE CRUDO RECIBIDO DE TIKFINITY ---");
+                    console.log(event.data);
+                    console.log("-----------------------------------------");
+                    try {
+                        const message = JSON.parse(event.data);
+                        console.log('Mensaje procesado:', message);
+                        if (message.event === 'tiktok_gift' && message.data) {
+                            console.log('Evento de Regalo detectado. Datos:', message.data);
+                            const user = message.data.user || message.data.nickname || 'Anónimo';
+                            const donationValue = message.data.coins || message.data.diamondCount || message.data.amount;
+        
+                            if (donationValue && parseInt(donationValue, 10) === 1) {
+                                console.log(`${user} ha donado 1 moneda. ¡Girando la ruleta!`);
+                                triggerSpin(user);
+                            } else {
+                                console.log(`Donación de ${user} por ${donationValue} monedas ignorada (no es 1).`);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error al procesar mensaje de WebSocket:', error);
+                    }
+                };
+                ws.onclose = () => {
+                    console.log('Desconectado de TikFinity. Reintentando en 5 segundos...');
+                    const statusDot = connectionStatus.querySelector('.dot');
+                    const statusText = connectionStatus.querySelector('span:last-child');
+                    connectionStatus.style.backgroundColor = '#991b1b'; // bg-red-800
+                    connectionStatus.style.color = '#fee2e2'; // text-red-200
+                    statusDot.style.backgroundColor = '#ef4444'; // bg-red-500
+                    statusText.textContent = 'Reconectando...';
+                    setTimeout(connectWebSocket, 5000); 
+                };
+                ws.onerror = (error) => {
+                    console.error('Error de WebSocket:', error);
+                    ws.close();
+                };
+            }
+        
+            function initializeApp() {
+                const urlParams = new URLSearchParams(window.location.search);
+                isSetupMode = urlParams.has('setup');
+                let optionsLoaded = false;
+        
+                if (urlParams.has('wheel')) {
+                    const base64String = urlParams.get('wheel');
+                    try {
+                        const jsonString = atob(base64String);
+                        const importedOptions = JSON.parse(jsonString);
+                        if (Array.isArray(importedOptions) && importedOptions.length > 0) {
+                            currentWheelOptions = importedOptions;
+                            saveWheelToLocalStorage();
+                            prepareRoulette();
+                            buttons.play.disabled = false;
+                            optionsLoaded = true;
+                        }
+                    } catch (error) {
+                        console.error('Error al decodificar la ruleta desde la URL:', error);
+                    }
+                }
+                
+                if (!optionsLoaded) {
+                    optionsLoaded = loadWheelFromLocalStorage();
+                }
+        
+                if (isSetupMode) {
+                    document.body.style.backgroundColor = '#1a1a2e';
+                    showScreen('home');
+                } else {
+                    document.body.style.backgroundColor = 'transparent';
+                    const gameUI = document.getElementById('gameUI');
+                    const setupMessage = document.getElementById('setupMessage');
+                    if (optionsLoaded) {
+                        gameUI.style.display = 'flex';
+                        setupMessage.style.display = 'none';
+                        donorNameDisplay.textContent = 'Esperando donación...';
+                    } else {
+                        gameUI.style.display = 'none';
+                        setupMessage.style.display = 'block';
+                    }
+                    showScreen('play');
+                    document.getElementById('spinBtn').style.display = 'none';
+                    buttons.backToHomeFromPlayBtn.style.display = 'none';
+                }
+                connectWebSocket();
+            }
+
+            initializeApp();
+        });
     </script>
 </body>
 </html>
