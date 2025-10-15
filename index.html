@@ -152,7 +152,6 @@
 </head>
 <body>
 
-    <!-- Pantalla de Inicio -->
     <div id="homeScreen" class="screen">
         <div class="absolute top-4 right-4">
             <div id="connectionStatus" class="status-indicator bg-gray-700 text-gray-300">
@@ -184,7 +183,6 @@
         </div>
     </div>
 
-    <!-- Pantalla de Ajustes -->
     <div id="settingsScreen" class="screen modal-bg">
         <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
              <h2 class="text-3xl font-bold mb-6">Ajustes</h2>
@@ -193,13 +191,11 @@
         </div>
     </div>
 
-    <!-- Pantalla de Creación de Ruleta -->
     <div id="createWheelScreen" class="screen modal-bg">
         <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-2xl h-full max-h-[90vh] flex flex-col">
             <h2 class="text-2xl font-bold mb-4 flex-shrink-0">Crear Ruleta</h2>
             <div id="optionsContainer" class="space-y-3 overflow-y-auto p-2 flex-grow">
-                <!-- Las opciones se agregarán aquí dinámicamente -->
-            </div>
+                </div>
             <div class="mt-4 space-x-2 flex-shrink-0">
                 <button id="addOptionBtn" class="btn btn-primary">Añadir Opción</button>
                 <button id="saveWheelBtn" class="btn btn-green">Guardar y Obtener Enlace</button>
@@ -208,7 +204,6 @@
         </div>
     </div>
     
-    <!-- Pantalla de Juego -->
     <div id="playScreen" class="screen">
         <div id="setupMessage" class="hidden text-center p-8 bg-gray-800 rounded-lg shadow-xl max-w-lg">
              <p class="text-2xl font-bold text-yellow-400 mb-4">¡La ruleta está vacía!</p>
@@ -231,7 +226,6 @@
         </div>
     </div>
 
-    <!-- Modal de Ganador -->
     <div id="winnerModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
         <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center">
             <p id="spinTriggerText" class="text-lg mb-2"></p>
@@ -241,7 +235,6 @@
         </div>
     </div>
 
-    <!-- Modal de Enlace Generado -->
     <div id="linkModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
         <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-lg text-left">
             <h2 id="linkModalTitle" class="text-2xl font-bold mb-4">¡Ruleta Guardada y Lista!</h2>
@@ -254,7 +247,6 @@
         </div>
     </div>
 
-    <!-- Modal de Alerta -->
     <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
         <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center max-w-sm">
             <p id="alertMessage" class="text-lg mb-6"></p>
@@ -519,8 +511,9 @@
                     if (message.event === 'tiktok_gift' && message.data) {
                         console.log('Evento de Regalo detectado. Datos:', message.data);
                         const user = message.data.user || message.data.nickname || 'Anónimo';
-                        // TikFinity puede usar 'coins' o 'diamondCount'. Revisamos ambos.
-                        const donationValue = message.data.coins || message.data.diamondCount;
+                        
+                        // CORRECCIÓN AQUÍ: Añadimos 'message.data.amount' como una posible fuente del valor.
+                        const donationValue = message.data.coins || message.data.diamondCount || message.data.amount;
 
                         // Nos aseguramos que el valor exista y sea 1 (convirtiendo texto a número)
                         if (donationValue && parseInt(donationValue, 10) === 1) {
@@ -601,4 +594,3 @@
     </script>
 </body>
 </html>
-
