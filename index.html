@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <!-- CSP laxa para permitir WebSocket locales (ajústala si tu entorno ya define CSP propia) -->
-  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' data: blob:; img-src * data: blob:; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval' https: http:; connect-src * ws: wss:;">
+  <!-- CSP laxa para permitir WebSocket LAN (ajústala si tu entorno ya define CSP propia) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' data: blob:; img-src * data: blob:; style-src * 'unsafe-inline'; script-src * 'unsafe-eval' https: http:; connect-src * ws: wss: http: https:;">
 
   <style>
     body{font-family:'Poppins',sans-serif;background-color:transparent;color:#e0e0e0;overflow:hidden}
@@ -294,22 +294,14 @@
       if(isSetupMode){ showScreen('home'); } else { donorNameDisplay.textContent='Esperando donación...'; }
     });
 
-    /* ======================
-       WEBSOCKET ROBUSTO
-       ====================== */
-    const WS_ENDPOINTS = [
-      'ws://localhost:21213/',
-      'ws://127.0.0.1:21213/',
-      'ws://localhost:21212/',
-      'ws://127.0.0.1:21212/'
-    ];
-    let ws=null, wsIndex=0;
+    /* ====== WebSocket ÚNICO ====== */
+    const WS_URL = 'ws://192.168.1.69:21213/';
+    let ws = null;
 
     function setConnectedUI(ok){
       if(ok){
         connectionStatus.innerHTML = `<span class="dot bg-green-500"></span><span>Conectado</span>`;
-        connectionStatus.classList.remove('bg-gray-700','text-gray-300');
-        connectionStatus.classList.remove('bg-red-800','text-red-200');
+        connectionStatus.classList.remove('bg-gray-700','text-gray-300','bg-red-800','text-red-200');
         connectionStatus.classList.add('bg-green-800','text-green-200');
       }else{
         connectionStatus.innerHTML = `<span class="dot bg-red-500"></span><span>Reconectando...</span>`;
@@ -318,78 +310,59 @@
       }
     }
 
-    function nextAttempt(){ wsIndex=(wsIndex+1)%WS_ENDPOINTS.length; setConnectedUI(false); setTimeout(connectWebSocket, 3000); }
-
     function connectWebSocket(){
-      const url = WS_ENDPOINTS[wsIndex];
-      try{
-        ws = new WebSocket(url);
-      }catch(e){
-        console.error('Fallo creando WebSocket', e);
-        return nextAttempt();
-      }
+      try { ws = new WebSocket(WS_URL); }
+      catch(e){ console.error('No se pudo crear WebSocket', e); return setTimeout(connectWebSocket, 3000); }
 
       ws.onopen = ()=>{
-        console.log('Conectado a TikFinity en', url);
+        console.log('Conectado a', WS_URL);
         setConnectedUI(true);
       };
 
       ws.onmessage = (event)=>{
-        // --- Parser tolerante ---
-        let msgRaw = event.data;
         let msg;
-        try{
-          msg = typeof msgRaw === 'string' ? JSON.parse(msgRaw) : msgRaw;
-        }catch(err){
-          console.warn('Mensaje no-JSON:', msgRaw);
-          return;
-        }
+        try{ msg = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; }
+        catch(err){ console.warn('Mensaje no-JSON:', event.data); return; }
 
         const evtName = String((msg.event || msg.type || msg.name || '')).toLowerCase();
         const data = msg.data || msg.payload || msg;
         if(!data) return;
 
         const user = data.user || data.username || data.nickname || data.displayName || 'Anónimo';
-
-        // Extrae coins/diamonds de múltiples claves posibles
         const coinKeys = ['coins','coin','coinCount','diamondCount','diamonds','amount','value'];
-        let donationValue = 0;
-        for(const k of coinKeys){
-          if(data[k] != null && !isNaN(Number(data[k]))){ donationValue = Number(data[k]); break; }
-        }
+        let coins = 0;
+        for(const k of coinKeys){ if(data[k]!=null && !isNaN(Number(data[k]))){ coins = Number(data[k]); break; } }
 
         const giftName = data.giftName || (data.gift && (data.gift.name || data.gift.giftName)) || '';
         const isRose = /rose|rosa/i.test(String(giftName));
-
         const isGiftEvt = evtName.includes('gift') || !!giftName || data.giftId != null;
 
-        // Manejo de streaks: si existen flags de fin de combo, espera al final
-        const hasStreakFlags = Object.prototype.hasOwnProperty.call(data, 'repeatCount') || Object.prototype.hasOwnProperty.call(data, 'repeatEnd');
-        const isStreakFinal = (data.repeatEnd === true) || (data.final === true) || (data.is_final === true) || (data.streakEnded === true);
+        const hasStreak = Object.prototype.hasOwnProperty.call(data,'repeatCount') || Object.prototype.hasOwnProperty.call(data,'repeatEnd');
+        const isStreakFinal = (data.repeatEnd===true) || (data.final===true) || (data.is_final===true) || (data.streakEnded===true);
 
         if(isGiftEvt){
-          // Condición: Rose o >= 1 coin (cubre "moneda" y combos de rosas)
-          const shouldSpin = isRose || donationValue >= 1;
+          const shouldSpin = isRose || coins >= 1; // cambia a === 1 si quieres estrictamente 1 moneda
           if(shouldSpin){
-            if(hasStreakFlags && !isStreakFinal){
-              console.log('Gift en streak, esperando fin…', {user, giftName, donationValue, repeatCount:data.repeatCount});
+            if(hasStreak && !isStreakFinal){
+              console.log('Gift streak en curso, esperando fin…',{user,giftName,coins,repeatCount:data.repeatCount});
               return;
             }
-            console.log(`Trigger por regalo: ${user} | gift="${giftName}" | coins=${donationValue}`);
+            console.log(`Trigger por regalo: ${user} | gift="${giftName}" | coins=${coins}`);
             triggerSpin(user);
           }else{
-            console.log('Regalo ignorado por filtro', {evtName, giftName, donationValue});
+            console.log('Regalo ignorado por filtro',{evtName,giftName,coins});
           }
         }
       };
 
       ws.onclose = ()=>{
-        console.log('Desconectado de TikFinity. Reintentando…');
-        nextAttempt();
+        console.log('WS cerrado. Reintentando…');
+        setConnectedUI(false);
+        setTimeout(connectWebSocket, 3000);
       };
 
       ws.onerror = (err)=>{
-        console.error('Error de WebSocket:', err);
+        console.error('WS error:', err);
         try{ ws.close(); }catch(_){}
       };
     }
@@ -409,7 +382,6 @@
           }
         }catch(e){ console.error('Error decodificando ruleta desde URL:', e); }
       }
-
       if(!optionsLoaded){ optionsLoaded = loadWheelFromLocalStorage(); }
 
       if(isSetupMode){
@@ -421,7 +393,8 @@
         else{ gameUI.style.display='none'; setupMessage.style.display='block'; }
         showScreen('play');
         document.getElementById('spinBtn').style.display='none';
-        buttons.backToHomeFromPlayBtn.style.display='none';
+        // FIX: propiedad correcta
+        buttons.backToHomeFromPlay.style.display = 'none';
       }
 
       connectWebSocket();
