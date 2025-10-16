@@ -1,594 +1,477 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucky Wheel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: transparent;
-            color: #e0e0e0;
-            overflow: hidden;
-        }
-        .screen {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            padding: 1rem;
-            box-sizing: border-box;
-            transition: opacity 0.3s ease;
-        }
-        .screen.active {
-            display: flex;
-        }
-        .btn {
-            padding: 0.75rem 2rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .btn-primary {
-            background-color: #4f46e5;
-            color: white;
-        }
-        .btn-primary:hover:not(:disabled) {
-            background-color: #4338ca;
-        }
-        .btn-secondary {
-            background-color: #374151;
-            color: white;
-        }
-         .btn-secondary:hover {
-            background-color: #4b5563;
-        }
-        .btn-green {
-            background: linear-gradient(180deg, #4ade80, #22c55e);
-            color: #1e293b;
-            border: 1px solid #86efac;
-        }
-        .btn-green:hover {
-             background: linear-gradient(180deg, #86efac, #4ade80);
-        }
-        .modal-bg {
-            background-color: rgba(26, 26, 46, 0.85);
-        }
-        .lucky-wheel-logo {
-            filter: drop-shadow(0 0 1rem rgba(139, 92, 246, 0.6));
-        }
-        .roulette-container {
-            width: 100%;
-            max-width: 90vw;
-            height: 120px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 1rem;
-            position: relative;
-            overflow: hidden;
-            border: 3px solid #4f46e5;
-            box-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
-        }
-        .roulette-pointer {
-            position: absolute;
-            top: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 20px solid #facc15;
-            z-index: 10;
-        }
-        .roulette-wheel {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            display: flex;
-            will-change: transform;
-            transition: transform 7s cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-        .roulette-item {
-            width: 120px;
-            height: 120px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            flex-shrink: 0;
-            padding: 5px;
-            text-align: center;
-            box-sizing: border-box;
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
-        .winner-modal {
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        .status-indicator {
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-        }
-        .status-indicator .dot {
-            width: 0.75rem;
-            height: 0.75rem;
-            border-radius: 50%;
-            margin-right: 0.5rem;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>Overlay Ruleta TikTok (TikFinity WS)</title>
+  <style>
+    :root {
+      --bg: rgba(0,0,0,.25);
+      --pill: rgba(0,0,0,.55);
+      --accent: #ffd54f;
+      --dur: 15000ms;
+    }
+    html,body { height:100%; }
+    body {
+      margin:0; font-family: system-ui, Segoe UI, Roboto, Arial;
+      background: var(--bg); color:#fff; overflow:hidden;
+    }
+    #topbar {
+      position: absolute; inset: 12px 12px auto 12px;
+      display:flex; gap:10px; align-items:center; z-index: 100;
+    }
+    .pill { padding:8px 12px; border-radius:12px; background:var(--pill); backdrop-filter:blur(6px); font-weight:600; }
+    #status.ok { background: rgba(0,120,60,.6); }
+    #status.err { background: rgba(140,0,0,.6); }
+    #wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+    #viewport {
+      width:900px; max-width:95vw; height:180px; border-radius:16px; position:relative; overflow:hidden;
+      background:rgba(20,20,20,.55); outline:2px solid rgba(255,255,255,.08); box-shadow:0 8px 24px rgba(0,0,0,.35);
+    }
+    #carril { display:flex; gap:12px; padding:0 24px; transform:translateX(0); }
+    #carril.anim { transition: transform var(--dur) cubic-bezier(.12,.65,.22,1); }
+    .item {
+      display:inline-flex; align-items:center; justify-content:center; padding:12px 16px;
+      aspect-ratio:1/1; min-width:110px; height:auto; border-radius:12px;
+      font-size:20px; font-weight:800; text-align:center; border:1px solid rgba(255,255,255,.12); user-select:none; line-height:1.1;
+    }
+    .item.nada { background:rgba(207,25,25,.7); }
+    .item.casi { background:rgba(224,219,56,.7); color:#000; }
+    .item.win  { background:rgba(16,203,66,.75); }
+    #marker { position:absolute; inset:0; pointer-events:none; z-index:5; }
+    #marker::after {
+      content:""; position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+      border-left:12px solid transparent; border-right:12px solid transparent; border-top:16px solid var(--accent);
+      filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));
+    }
+    #toast {
+      position:absolute; bottom:20px; left:50%; transform:translateX(-50%) translateY(50px);
+      background:rgba(0,0,0,.75); padding:10px 16px; border-radius:10px; opacity:0;
+      transition:transform .35s ease, opacity .35s ease; font-weight:700;
+    }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    #gifterBadge {
+      position:absolute; left:50%;
+      top:calc(50% - 180px/2 - 24px); transform:translateX(-50%);
+      background:rgba(0,0,0,.8); padding:6px 12px; border-radius:10px; font-weight:800; font-size:14px; white-space:nowrap;
+      opacity:0; transition:opacity .3s ease, transform .3s ease; pointer-events:none; z-index:20;
+    }
+    #gifterBadge.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
+    #btn { pointer-events:auto; }
+  </style>
 </head>
 <body>
+  <div id="topbar">
+    <div id="status" class="pill">WS: conectando…</div>
+    <button id="btn" class="pill">Girar (prueba)</button>
+  </div>
 
-    <div id="homeScreen" class="screen">
-        <div class="absolute top-4 right-4">
-            <div id="connectionStatus" class="status-indicator bg-gray-700 text-gray-300">
-                <span class="dot bg-gray-500"></span>
-                <span>Desconectado</span>
-            </div>
-        </div>
-        <div class="text-center">
-            <svg class="lucky-wheel-logo w-48 h-48 mx-auto mb-8" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:1" />
-                    </linearGradient>
-                    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#fde047;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
-                    </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="48" fill="url(#logoGradient)" stroke="#c4b5fd" stroke-width="4"/>
-                <text x="50" y="58" font-family="Poppins, sans-serif" font-size="20" font-weight="bold" fill="url(#textGradient)" text-anchor="middle">LUCKY</text>
-                <text x="50" y="78" font-family="Poppins, sans-serif" font-size="20" font-weight="bold" fill="url(#textGradient)" text-anchor="middle">WHEEL</text>
-            </svg>
-            <h1 class="text-4xl font-bold mb-10 text-shadow">Ruleta de la Suerte</h1>
-            <div class="space-y-4">
-                <button id="playBtn" class="btn btn-primary w-48">Jugar Manual</button>
-                <button id="settingsBtn" class="btn btn-secondary w-48">Ajustes</button>
-            </div>
-        </div>
+  <div id="wrap">
+    <div id="gifterBadge"></div>
+
+    <div id="viewport">
+      <div id="marker"></div>
+      <div id="carril">
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item casi">Casi</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+        <div class="item nada">Nada</div>
+      </div>
     </div>
 
-    <div id="settingsScreen" class="screen modal-bg">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
-             <h2 class="text-3xl font-bold mb-6">Ajustes</h2>
-             <button id="newWheelBtn" class="btn btn-primary w-full mb-4">Crear/Editar Ruleta</button>
-             <button id="backToHomeFromSettingsBtn" class="btn btn-secondary w-full">Volver</button>
-        </div>
-    </div>
+    <div id="toast">Premio: —</div>
+  </div>
 
-    <div id="createWheelScreen" class="screen modal-bg">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-2xl h-full max-h-[90vh] flex flex-col">
-            <h2 class="text-2xl font-bold mb-4 flex-shrink-0">Crear Ruleta</h2>
-            <div id="optionsContainer" class="space-y-3 overflow-y-auto p-2 flex-grow">
-                </div>
-            <div class="mt-4 space-x-2 flex-shrink-0">
-                <button id="addOptionBtn" class="btn btn-primary">Añadir Opción</button>
-                <button id="saveWheelBtn" class="btn btn-green">Guardar y Obtener Enlace</button>
-                <button id="backToSettingsBtn" class="btn btn-secondary">Cancelar</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="playScreen" class="screen">
-        <div id="setupMessage" class="hidden text-center p-8 bg-gray-800 rounded-lg shadow-xl max-w-lg">
-             <p class="text-2xl font-bold text-yellow-400 mb-4">¡La ruleta está vacía!</p>
-             <p class="text-lg">Para empezar, abre tu enlace en un navegador y añade <strong class="text-white">?setup=true</strong> al final de la URL para configurar las opciones.</p>
-        </div>
-        
-        <div id="gameUI" class="w-full flex flex-col items-center">
-            <div class="absolute top-4 left-4">
-                 <button id="backToHomeFromPlayBtn" class="btn btn-secondary">Volver al Inicio</button>
-            </div>
-            <div class="text-center mb-6">
-                <p class="text-xl">Giro por:</p>
-                <p id="donorNameDisplay" class="text-3xl font-bold text-yellow-400"></p>
-            </div>
-            <div class="roulette-container">
-                <div class="roulette-pointer"></div>
-                <div id="rouletteWheel" class="roulette-wheel"></div>
-            </div>
-            <button id="spinBtn" class="btn btn-primary mt-8 text-2xl px-12 py-4">¡Girar!</button>
-        </div>
-    </div>
+<script>
+  // ===== CONFIG =====
+  const PROBABILIDADES={nada:1.0,casi:0,win:0};
+  const PROBABILIDADES={nada:1.0,casi:0,win:0}; // ajusta si quieres otras probabilidades
+  const BASE_MS=15000, MS_POR_SLOT=0, COPIAS=15;
+  const CENTER_NUDGE_PX = 0;
 
-    <div id="winnerModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center">
-            <p id="spinTriggerText" class="text-lg mb-2"></p>
-            <h2 class="text-xl mb-4">El ganador es:</h2>
-            <p id="winnerResult" class="text-4xl font-bold mb-6"></p>
-            <button id="closeWinnerModalBtn" class="btn btn-primary">Cerrar</button>
-        </div>
-    </div>
+  const COINS_PER_SPIN = 10;   // 30 monedas = 1 giro
+  const COUNT_PER_SPIN = 0;
+  const ONLY_ON_STREAK_END = true; // no exigir fin de racha
+  // ✅ Contar solo cuando finaliza la racha (evita giros dobles)
+  const ONLY_ON_STREAK_END = true;
 
-    <div id="linkModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-lg text-left">
-            <h2 id="linkModalTitle" class="text-2xl font-bold mb-4">¡Ruleta Guardada y Lista!</h2>
-            <p id="linkModalDescription" class="mb-4">Usa este enlace único en TikTok Studio. Ya tiene tus opciones configuradas:</p>
-            <textarea id="linkModalTextarea" class="w-full h-24 bg-gray-900 text-white p-2 rounded border border-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-            <div class="mt-4 flex justify-end space-x-2">
-                <button id="copyLinkBtn" class="btn btn-primary">Copiar Enlace</button>
-                <button id="closeLinkModalBtn" class="btn btn-secondary">Cerrar</button>
-            </div>
-        </div>
-    </div>
+  // Variantes de rosquilla
+  const GIFT_VALUES = {
+    "rosquilla": 30, "rosquillas": 30,
+    "dona": 30, "donas": 30,
+    "donut": 30, "donuts": 30
+  };
 
-    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center hidden winner-modal">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center max-w-sm">
-            <p id="alertMessage" class="text-lg mb-6"></p>
-            <button id="closeAlertModalBtn" class="btn btn-primary">Aceptar</button>
-        </div>
-    </div>
+  // ===== Estado =====
+  let ws=null, spinning=false;
+  let pendingSpins=0;
+  let spinQueue=[];
+  const statusEl=document.getElementById('status');
+  const btn=document.getElementById('btn');
+  const viewport=document.getElementById('viewport');
+  const carril=document.getElementById('carril');
+  const toast=document.getElementById('toast');
+  const gifterBadge=document.getElementById('gifterBadge');
+  let baseCount=0,middleBlock=0,currentAbs=0,ITEM_W=150,STEP_W=162;
+  let hideBadgeTimer=null;
+  let CURRENT_TX = 0;
 
-    <script>
-        const screens = {
-            home: document.getElementById('homeScreen'),
-            settings: document.getElementById('settingsScreen'),
-            createWheel: document.getElementById('createWheelScreen'),
-            play: document.getElementById('playScreen')
-        };
-    
-        const buttons = {
-            play: document.getElementById('playBtn'),
-            settings: document.getElementById('settingsBtn'),
-            newWheel: document.getElementById('newWheelBtn'),
-            backToHomeFromSettings: document.getElementById('backToHomeFromSettingsBtn'),
-            addOption: document.getElementById('addOptionBtn'),
-            saveWheel: document.getElementById('saveWheelBtn'),
-            backToSettings: document.getElementById('backToSettingsBtn'),
-            backToHomeFromPlay: document.getElementById('backToHomeFromPlayBtn'),
-            spin: document.getElementById('spinBtn'),
-            closeWinnerModal: document.getElementById('closeWinnerModalBtn')
-        };
-        
-        const optionsContainer = document.getElementById('optionsContainer');
-        const rouletteWheel = document.getElementById('rouletteWheel');
-        const winnerModal = document.getElementById('winnerModal');
-        const winnerResult = document.getElementById('winnerResult');
-        const donorNameDisplay = document.getElementById('donorNameDisplay');
-        const spinTriggerText = document.getElementById('spinTriggerText');
-        const connectionStatus = document.getElementById('connectionStatus');
-    
-        // Modals
-        const alertModal = document.getElementById('alertModal');
-        const alertMessage = document.getElementById('alertMessage');
-        const closeAlertModalBtn = document.getElementById('closeAlertModalBtn');
-        const linkModal = document.getElementById('linkModal');
-        const linkModalTextarea = document.getElementById('linkModalTextarea');
-        const copyLinkBtn = document.getElementById('copyLinkBtn');
-        const closeLinkModalBtn = document.getElementById('closeLinkModalBtn');
-    
-        let currentWheelOptions = [];
-        let isSpinning = false;
-        let isSetupMode = false;
-        
-        // --- LÓGICA DE MODALES ---
-        function showAlert(message) {
-            alertMessage.textContent = message;
-            alertModal.style.display = 'flex';
+  // ===== Layout =====
+  function measureSizes(){
+    const prev=carril.style.transform;
+    carril.classList.remove('anim'); carril.style.transform='translateX(0px)';
+    const items=carril.querySelectorAll('.item');
+    if(items.length>=2){
+      const r1=items[0].getBoundingClientRect();
+      const r2=items[1].getBoundingClientRect();
+      ITEM_W=r1.width; STEP_W=r2.left-r1.left;
+    }
+    requestAnimationFrame(()=>{ carril.style.transform=prev||'translateX(0px)'; });
+  }
+  function setTransform(tx, smooth=false, durMs=BASE_MS){
+    if(smooth){ carril.style.setProperty('--dur', `${Math.max(50, Math.round(durMs))}ms`); carril.classList.add('anim'); }
+    else { carril.classList.remove('anim'); }
+    CURRENT_TX = tx;
+    carril.style.transform = `translateX(${tx}px)`;
+  }
+  function renderTo(absIndex,smooth=true,durMs=BASE_MS){
+    const rect=viewport.getBoundingClientRect();
+    const center=(rect.width/2)-(ITEM_W/2);
+    const tx=-(absIndex*STEP_W)+center;
+    setTransform(tx, smooth, durMs);
+    currentAbs=absIndex;
+  }
+  function mod(n,m){return((n%m)+m)%m;}
+  function recenter(absIndex){ const rel=mod(absIndex,baseCount); renderTo(middleBlock*baseCount+rel,false); }
+
+  // ===== Probabilidades =====
+  function getWeightedRandomIndex() {
+    const items = carril.querySelectorAll('.item');
+    const buckets = { nada: [], casi: [], win: [] };
+    for (let i = 0; i < baseCount; i++) {
+      const cls = items[i].classList;
+      const tipo = cls.contains('win') ? 'win' : (cls.contains('casi') ? 'casi' : 'nada');
+      buckets[tipo].push(i);
+    }
+    const ORDER = ['nada','casi','win'];
+    const weights = {}; let sum = 0;
+    for (const k of ORDER) {
+      let w = Math.max(0, Number(PROBABILIDADES[k] ?? 0));
+      if (!buckets[k].length) w = 0;
+      weights[k] = w; sum += w;
+    }
+    if (sum <= 0) {
+      for (const k of ORDER) if (buckets[k].length) {
+        const b=buckets[k]; return b[Math.floor(Math.random()*b.length)];
+      }
+      return 0;
+    }
+    const r=Math.random(); let acc=0;
+    for (const k of ORDER) { acc += weights[k]/sum; if (r < acc && buckets[k].length) { const b=buckets[k]; return b[Math.floor(Math.random()*b.length)]; } }
+    for (let i=ORDER.length-1;i>=0;i--){ const b=buckets[ORDER[i]]; if (b.length) return b[Math.floor(Math.random()*b.length)]; }
+    return 0;
+  }
+
+  // ===== UI =====
+  function showToast(txt,ms=1200){ toast.textContent=txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),ms); }
+  function showBadge(txt){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); gifterBadge.textContent=`🎁 ${txt}`; gifterBadge.classList.add('show'); }
+  function hideBadgeLater(ms=800){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); hideBadgeTimer=setTimeout(()=>gifterBadge.classList.remove('show'),ms); }
+  function getItemUnderMarker(){
+    const rect = viewport.getBoundingClientRect();
+    const x = rect.left + rect.width/2 + CENTER_NUDGE_PX;
+    const y = rect.top + 8;
+    let el = document.elementFromPoint(x, y);
+    while (el && !el.classList?.contains('item')) el = el.parentElement;
+    return el || null;
+  }
+  function snapCenterOnElement(el){
+    if(!el) return;
+    const vp = viewport.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const delta = (er.left + er.width/2) - (vp.left + vp.width/2);
+    setTransform(CURRENT_TX - delta, false);
+  }
+
+  // ===== Normalización =====
+  // ===== Normalización nombre de regalo =====
+  function normalizeGiftKey(name){
+    if(!name) return "";
+    const k = String(name).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if (/\brosquill/.test(k)) return 'rosquilla';
+    if (/\bdona/.test(k))     return 'dona';
+    if (/\bdonut/.test(k))    return 'donut';
+    return k;
+  }
+  function inferCoinsFromName(name, count=1) {
+    const key = normalizeGiftKey(name);
+    const candidates = [key, key.endsWith('s') ? key.slice(0,-1) : key+'s'];
+    for (const c of candidates){ if (GIFT_VALUES[c] != null) return GIFT_VALUES[c] * Math.max(1, count); }
+    return 0;
+  }
+
+  // ===== DEDUPE (anti-duplicados) =====
+  const DEDUPE_TTL_MS = 3000;
+  const dedupeCache = new Map();
+
+  function makeGiftKey(data) {
+    const uid = data.uniqueId || data.userId || data.user || 'anon';
+    const giftId = data.giftId || data.gift?.id || data.giftName || data.gift || 'gift';
+    const rep = Number(data.repeatCount ?? data.count ?? 1) || 1;
+    const diamonds = Number(data.diamondCount ?? data.diamonds ?? data.value ?? 0) || 0;
+    const end = String(Boolean(data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted));
+    const msgId = data.messageId || data.id || '';
+    return `${msgId}|${uid}|${giftId}|${rep}|${diamonds}|end:${end}`;
+  }
+
+  function isDuplicateGift(data){
+    const key = makeGiftKey(data);
+    const now = Date.now();
+    for (const [k, t] of dedupeCache) {
+      if (now - t > DEDUPE_TTL_MS) dedupeCache.delete(k);
+    }
+    const last = dedupeCache.get(key);
+    if (last && (now - last) < DEDUPE_TTL_MS) return true;
+    dedupeCache.set(key, now);
+    return false;
+  }
+
+  // ===== Conteo de giros desde datos TikFinity =====
+  function parseCoinsFromObj(obj){
+    const fields = ['diamondCount','diamonds','value','coins','coin','giftCoins','giftValue'];
+    for (const f of fields){
+      const v = Number(obj?.[f]);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
+    return NaN;
+  }
+
+  function spinsFromGiftData(data){
+    const giftName = data.giftName ?? data.gift ?? data.name ?? '';
+    const username = data.uniqueId ?? data.nickname ?? data.user ?? data.username ?? 'Anónimo';
+
+    const finalCount = Number(
+      data.repeatCount ?? data.comboCount ?? data.count ?? data.quantity ?? 1
+    ) || 1;
+
+    const coinsDirect =
+      parseCoinsFromObj(data) ||
+      parseCoinsFromObj(data.gift) ||
+      NaN;
+
+    const hasStreakFlag = (
+      'repeatEnd' in data || 'streakEnd' in data || 'comboEnd' in data || 'isCompleted' in data
+    );
+    const isStreakEnd = Boolean(
+      data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted ?? false
+    );
+
+    // Anti-duplicados
+    if (isDuplicateGift(data)) return {spins:0, user:username, giftName};
+
+    // Contar SOLO al final si existen flags de racha
+    if (ONLY_ON_STREAK_END && hasStreakFlag) {
+      if (!isStreakEnd) return {spins:0, user:username, giftName};
+      if (Number.isFinite(coinsDirect) && coinsDirect > 0) {
+        return {spins: Math.max(0, Math.floor(coinsDirect / COINS_PER_SPIN)), user: username, giftName};
+      }
+      const inferred = inferCoinsFromName(giftName, Math.max(1, finalCount));
+      return {spins: Math.max(0, Math.floor(inferred / COINS_PER_SPIN)), user: username, giftName};
+    }
+
+    // Si no hay flags, procesar evento individual
+    if (Number.isFinite(coinsDirect) && coinsDirect > 0) {
+      return {spins: Math.max(0, Math.floor(coinsDirect / COINS_PER_SPIN)), user: username, giftName};
+    }
+    const inferred = inferCoinsFromName(giftName, Math.max(1, finalCount));
+    if (inferred > 0) {
+      return {spins: Math.max(0, Math.floor(inferred / COINS_PER_SPIN)), user: username, giftName};
+    }
+
+    if (COUNT_PER_SPIN > 0 && finalCount > 0) {
+      return {spins: finalCount * COUNT_PER_SPIN, user: username, giftName};
+    }
+    return {spins:0, user:username, giftName};
+  }
+
+  // ===== Giro =====
+  function spinOnce(){
+    if(spinning){return;}
+    spinning=true;
+    const currentSpinner = spinQueue.shift() || 'Anónimo';
+    pendingSpins = Math.max(0, pendingSpins - 1);
+    showBadge(currentSpinner);
+
+    const idxRel=getWeightedRandomIndex();
+    const vueltas=2+Math.floor(Math.random()*2);
+    const pasos=vueltas*baseCount+idxRel;
+    const durMs=BASE_MS+pasos*MS_POR_SLOT;
+    const targetAbs=currentAbs+pasos;
+
+    renderTo(targetAbs,true,durMs);
+
+    const onEnd=()=>{
+      carril.removeEventListener('transitionend',onEnd);
+      recenter(targetAbs);
+      const elCentro = getItemUnderMarker();
+      snapCenterOnElement(elCentro);
+      const premio = elCentro ? elCentro.innerText.trim().replace(/\s+/g,' ') : '(?)';
+      showToast('Premio: '+premio);
+      hideBadgeLater(600);
+      spinning=false;
+      if (pendingSpins > 0) setTimeout(spinOnce, 300);
+    };
+    carril.addEventListener('transitionend',onEnd,{once:true});
+  }
+
+  function queueSpins(n, user){
+    n = Math.max(0, Math.floor(n||0));
+    if (!n) return;
+    const name = user || 'Anónimo';
+    for (let i=0;i<n;i++) spinQueue.push(name);
+    pendingSpins += n;
+    console.log(`[QUEUE] +${n} giros por ${name}. Pendientes: ${pendingSpins}`);
+    if (!spinning) spinOnce();
+  }
+
+  // ===== Parseo TikFinity Event API =====
+  function parseCoinsFromObj(obj){
+    const fields = ['coins','coin','value','diamonds','diamond','giftCoins','gift_coins','giftValue','gift_value','diamondCount'];
+    for (const f of fields){
+      const v = Number(obj?.[f]);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
+    return NaN;
+  }
+
+  function spinsFromGiftData(data){
+    // data puede venir tal cual del conector
+    const giftName = data.giftName ?? data.gift ?? data.name ?? '';
+    const username = data.uniqueId ?? data.nickname ?? data.user ?? data.username ?? 'Anónimo';
+
+    const count = Number(
+      data.repeatCount ?? data.count ?? data.quantity ?? data.comboCount ?? data.combo_count ?? 1
+    ) || 1;
+
+    const coinsDirect = parseCoinsFromObj(data) || parseCoinsFromObj(data.gift) || NaN;
+
+    // Flags de racha (no los exigimos)
+    const isStreakEnd = Boolean(
+      data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted ?? false
+    );
+
+    // 1) Si hay monedas totales (diamonds/coins)
+    if (Number.isFinite(coinsDirect) && coinsDirect > 0){
+      const spins = Math.floor(coinsDirect / COINS_PER_SPIN);
+      return {spins: Math.max(0, spins), user: username, giftName};
+    }
+
+    // 2) Inferir por nombre * cantidad (rosquillas)
+    const inferred = inferCoinsFromName(giftName, Math.max(1, count));
+    if (inferred > 0){
+      const spins = Math.floor(inferred / COINS_PER_SPIN);
+      return {spins: Math.max(0, spins), user: username, giftName};
+    }
+
+    // 3) Recurso final por conteo si configuras COUNT_PER_SPIN
+    if (COUNT_PER_SPIN > 0 && count > 0){
+      if (ONLY_ON_STREAK_END && !isStreakEnd) return {spins:0, user:username, giftName};
+      return {spins: count * COUNT_PER_SPIN, user: username, giftName};
+    }
+
+    return {spins:0, user:username, giftName};
+  }
+
+  // ===== Init =====
+  (function init(){
+    const baseHTML=carril.innerHTML;
+    baseCount=carril.children.length;
+    for(let i=1;i<COPIAS;i++) carril.insertAdjacentHTML('beforeend',baseHTML);
+    middleBlock=Math.floor(COPIAS/2);
+    measureSizes();
+    currentAbs=middleBlock*baseCount+Math.floor(baseCount/2);
+    renderTo(currentAbs,false);
+    window.addEventListener('resize',()=>{measureSizes();renderTo(currentAbs,false);});
+  })();
+
+  btn.addEventListener('click', () => { if (!spinning && pendingSpins===0) queueSpins(1, 'Tester'); });
+
+  // Tecla T = simular 15 rosquillas (450 monedas = 15/30 = 15 giros)
+  window.addEventListener('keydown', (e)=>{
+    if(e.key.toLowerCase()==='t'){
+      const sim = { event:'gift', data:{ giftName:'Rosquillas', repeatCount:15, diamondCount: 450, repeatEnd:true } };
+      console.log('[SIM]', sim);
+      const {spins,user,giftName} = spinsFromGiftData(sim.data);
+      console.log(`[SIM] ${giftName} -> spins: ${spins}`);
+      if (spins > 0) queueSpins(spins, user || 'Tester');
+      else showToast('Simulación sin giros', 1200);
+    }
+  });
+
+  // ===== WebSocket TikFinity =====
+  function getWSUrl(){
+    const u = new URL(window.location.href);
+    return u.searchParams.get('ws') || 'ws://localhost:21213/';
+  }
+
+  function openWS(){
+    const url = getWSUrl();
+    console.log('[WS] conectando a', url);
+    try{ ws = new WebSocket(url); }
+    catch(e){ statusEl.textContent='WS: error URL'; statusEl.classList.add('err'); return; }
+
+    ws.onopen = () => { statusEl.textContent=`WS: conectado`; statusEl.classList.add('ok'); statusEl.classList.remove('err'); };
+    ws.onclose = () => { statusEl.textContent='WS: desconectado'; statusEl.classList.remove('ok'); setTimeout(openWS, 1000); };
+    ws.onerror = (e) => { console.warn('[WS] error', e); statusEl.textContent='WS: error'; statusEl.classList.add('err'); };
+
+    ws.onmessage = (ev) => {
+      let raw = ev.data;
+      try{
+        const msg = JSON.parse(raw);
+        // Formato TikFinity Event API: { event: "gift" | "chat" | ... , data: {...} }
+        const evt = msg.event;
+        const data = msg.data || {};
+        // Log básico
+        console.log('[WS] evento:', evt, data);
+
+        if (evt === 'gift'){
+          const {spins, user, giftName} = spinsFromGiftData(data);
+          console.log(`[WS] gift ${giftName || '(sin nombre)'} -> spins: ${spins}`);
+          console.log(`[WS] gift ${giftName || '(?)'} -> spins: ${spins}`);
+          if (spins > 0) queueSpins(spins, user);
         }
-        closeAlertModalBtn.addEventListener('click', () => {
-            alertModal.style.display = 'none';
-        });
-    
-        copyLinkBtn.addEventListener('click', () => {
-            linkModalTextarea.select();
-            document.execCommand('copy');
-            showAlert('¡Enlace copiado al portapapeles!');
-        });
-        closeLinkModalBtn.addEventListener('click', () => {
-            linkModal.style.display = 'none';
-            showScreen('settings');
-        });
-    
-        // --- NAVEGACIÓN ---
-        function showScreen(screenName) {
-            Object.values(screens).forEach(screen => screen.classList.remove('active'));
-            screens[screenName].classList.add('active');
-        }
-    
-        buttons.settings.addEventListener('click', () => showScreen('settings'));
-        buttons.newWheel.addEventListener('click', () => {
-            populateCreateScreen();
-            showScreen('createWheel');
-        });
-        buttons.backToHomeFromSettings.addEventListener('click', () => showScreen('home'));
-        buttons.backToSettings.addEventListener('click', () => showScreen('settings'));
-        buttons.backToHomeFromPlay.addEventListener('click', () => showScreen('home'));
-        buttons.play.addEventListener('click', () => {
-             if (currentWheelOptions.length > 0) {
-                triggerSpin('Juego Manual');
-            } else {
-                showAlert('Primero debes crear una ruleta en Ajustes.');
-            }
-        });
-        
-        // --- LÓGICA DE CREACIÓN Y GUARDADO DE RULETA ---
-        let optionIdCounter = 0;
-        const colorPalette = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6", "#d946ef"];
-    
-        function getNextColor() {
-            const usedColors = Array.from(optionsContainer.querySelectorAll('input[type="color"]')).map(input => input.value);
-            return colorPalette.find(color => !usedColors.includes(color)) || colorPalette[Math.floor(Math.random() * colorPalette.length)];
-        }
-    
-        function createOptionElement({ text = '', frequency = 1, color }) {
-            optionIdCounter++;
-            const optionId = `option-${optionIdCounter}`;
-            const newColor = color || getNextColor();
-            const optionDiv = document.createElement('div');
-            optionDiv.id = optionId;
-            optionDiv.className = 'flex items-center space-x-2 bg-gray-700 p-2 rounded';
-            optionDiv.innerHTML = `
-                <input type="text" value="${text}" placeholder="Texto de la opción" class="text-input flex-grow bg-gray-600 rounded p-2 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white">
-                <input type="number" value="${frequency}" min="1" class="freq-input w-20 bg-gray-600 rounded p-2 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white">
-                <input type="color" value="${newColor}" class="color-input w-10 h-10 p-1 bg-gray-600 rounded border border-gray-500 cursor-pointer">
-                <button class="remove-option-btn bg-red-600 hover:bg-red-700 text-white font-bold p-2 rounded">&times;</button>
-            `;
-            optionsContainer.appendChild(optionDiv);
-            optionDiv.querySelector('.remove-option-btn').addEventListener('click', () => optionDiv.remove());
-        }
-    
-        function populateCreateScreen() {
-            optionsContainer.innerHTML = '';
-            if(currentWheelOptions.length > 0){
-                currentWheelOptions.forEach(option => createOptionElement(option));
-            } else {
-                createOptionElement({});
-                createOptionElement({});
-            }
-        }
-    
-        buttons.addOption.addEventListener('click', () => createOptionElement({}));
-    
-        buttons.saveWheel.addEventListener('click', () => {
-            const options = [];
-            const optionElements = optionsContainer.querySelectorAll('.flex.items-center');
-            let hasError = false;
-            optionElements.forEach(el => {
-                const text = el.querySelector('.text-input').value.trim();
-                const frequency = parseInt(el.querySelector('.freq-input').value, 10);
-                const color = el.querySelector('.color-input').value;
-                if (!text || isNaN(frequency) || frequency < 1) { hasError = true; }
-                options.push({ text, frequency, color });
-            });
-    
-            if (hasError) {
-                showAlert('Por favor, completa todos los campos de texto y asegúrate que la frecuencia sea al menos 1.');
-                return;
-            }
-            if (options.length < 2) {
-                showAlert('Necesitas al menos 2 opciones para crear la ruleta.');
-                return;
-            }
-            
-            currentWheelOptions = options;
-            saveWheelToLocalStorage();
-            prepareRoulette();
-    
-            const jsonString = JSON.stringify(currentWheelOptions);
-            const base64String = btoa(jsonString);
-            const baseURL = window.location.origin + window.location.pathname;
-            const shareableLink = `${baseURL}?wheel=${base64String}`;
-            
-            linkModalTextarea.value = shareableLink;
-            linkModal.style.display = 'flex';
-        });
-    
-        function saveWheelToLocalStorage() {
-            localStorage.setItem('luckyWheelOptions', JSON.stringify(currentWheelOptions));
-        }
-    
-        function loadWheelFromLocalStorage() {
-            const savedOptions = localStorage.getItem('luckyWheelOptions');
-            if (savedOptions && savedOptions !== '[]') {
-                currentWheelOptions = JSON.parse(savedOptions);
-                prepareRoulette();
-                buttons.play.disabled = false;
-                return true;
-            } else {
-                 buttons.play.disabled = true;
-                 currentWheelOptions = [];
-                 prepareRoulette();
-                 return false;
-            }
-        }
-    
-        // --- LÓGICA DEL JUEGO DE RULETA ---
-        function prepareRoulette() {
-            rouletteWheel.innerHTML = '';
-            if (currentWheelOptions.length === 0) return;
-            let weightedList = [];
-            currentWheelOptions.forEach(option => {
-                for (let i = 0; i < option.frequency; i++) { weightedList.push(option); }
-            });
-            for (let i = weightedList.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [weightedList[i], weightedList[j]] = [weightedList[j], weightedList[i]];
-            }
-            const wheelItems = [...weightedList, ...weightedList, ...weightedList]; 
-            wheelItems.forEach(item => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'roulette-item';
-                itemEl.textContent = item.text;
-                itemEl.style.backgroundColor = item.color;
-                rouletteWheel.appendChild(itemEl);
-            });
-        }
-        
-        function triggerSpin(donor = 'Juego Manual') {
-            if (isSpinning || currentWheelOptions.length < 2) return;
-            isSpinning = true;
-            showScreen('play');
-            donorNameDisplay.textContent = donor;
-            spinTriggerText.textContent = `Giro por ${donor}`;
-            document.getElementById('spinBtn').style.display = (donor === 'Juego Manual' && isSetupMode) ? 'block' : 'none';
-            const totalItems = rouletteWheel.children.length;
-            const singleSectionItems = totalItems / 3;
-            const itemWidth = 120;
-            const winnerIndexInSection = Math.floor(Math.random() * singleSectionItems);
-            const targetIndex = singleSectionItems + winnerIndexInSection;
-            const randomOffset = (Math.random() - 0.5) * itemWidth * 0.8;
-            const targetPosition = (targetIndex * itemWidth) - (rouletteWheel.parentElement.clientWidth / 2) + (itemWidth / 2) + randomOffset;
-            rouletteWheel.style.transition = 'none';
-            rouletteWheel.style.transform = `translateX(0px)`;
-            setTimeout(() => {
-                rouletteWheel.style.transition = 'transform 7s cubic-bezier(0.25, 0.1, 0.25, 1)';
-                rouletteWheel.style.transform = `translateX(-${targetPosition}px)`;
-            }, 50);
-            rouletteWheel.addEventListener('transitionend', () => {
-                isSpinning = false;
-                const winnerOption = rouletteWheel.children[targetIndex];
-                winnerResult.textContent = winnerOption.textContent;
-                winnerResult.style.color = winnerOption.style.backgroundColor;
-                winnerModal.style.display = 'flex';
-            }, { once: true });
-        }
-        
-        buttons.closeWinnerModal.addEventListener('click', () => {
-            winnerModal.style.display = 'none';
-            prepareRoulette();
-            rouletteWheel.style.transition = 'none';
-            rouletteWheel.style.transform = `translateX(0px)`;
-            if (isSetupMode) {
-                showScreen('home');
-            } else {
-                donorNameDisplay.textContent = 'Esperando donación...';
-            }
-        });
-    
-        // --- LÓGICA DE WEBSOCKET (TIKFINITY) ---
-        function connectWebSocket() {
-            const ws = new WebSocket('ws://localhost:21213/');
-            ws.onopen = () => {
-                console.log('Conectado a TikFinity.');
-                connectionStatus.innerHTML = `<span class="dot bg-green-500"></span><span>Conectado</span>`;
-                connectionStatus.classList.remove('bg-gray-700', 'text-gray-300');
-                connectionStatus.classList.add('bg-green-800', 'text-green-200');
-            };
-            ws.onmessage = (event) => {
-                console.log("--- MENSAJE CRUDO RECIBIDO DE TIKFINITY ---");
-                console.log(event.data);
-                console.log("-----------------------------------------");
-                try {
-                    const message = JSON.parse(event.data);
-                    console.log('Mensaje procesado:', message);
-                    if (message.event === 'tiktok_gift' && message.data) {
-                        console.log('Evento de Regalo detectado. Datos:', message.data);
-                        const user = message.data.user || message.data.nickname || 'Anónimo';
-                        
-                        const donationValue = message.data.coins || message.data.diamondCount || message.data.amount;
-    
-                        if (donationValue && parseInt(donationValue, 10) === 1) {
-                            console.log(`${user} ha donado 1 moneda. ¡Girando la ruleta!`);
-                            triggerSpin(user);
-                        } else {
-                            console.log(`Donación de ${user} por ${donationValue} monedas ignorada (no es 1).`);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error al procesar mensaje de WebSocket:', error);
-                }
-            };
-            ws.onclose = () => {
-                console.log('Desconectado de TikFinity. Reintentando en 5 segundos...');
-                connectionStatus.innerHTML = `<span class="dot bg-red-500"></span><span>Reconectando...</span>`;
-                connectionStatus.classList.remove('bg-green-800', 'text-green-200');
-                connectionStatus.classList.add('bg-red-800', 'text-red-200');
-                setTimeout(connectWebSocket, 5000); 
-            };
-            ws.onerror = (error) => {
-                console.error('Error de WebSocket:', error);
-                ws.close();
-            };
-        }
-    
-        // --- INICIALIZACIÓN ---
-        function initializeApp() {
-            const urlParams = new URLSearchParams(window.location.search);
-            isSetupMode = urlParams.has('setup');
-            let optionsLoaded = false;
-    
-            if (urlParams.has('wheel')) {
-                const base64String = urlParams.get('wheel');
-                try {
-                    const jsonString = atob(base64String);
-                    const importedOptions = JSON.parse(jsonString);
-                    if (Array.isArray(importedOptions) && importedOptions.length > 0) {
-                        currentWheelOptions = importedOptions;
-                        saveWheelToLocalStorage(); // Persist for convenience
-                        prepareRoulette();
-                        buttons.play.disabled = false;
-                        optionsLoaded = true;
-                    }
-                } catch (error) {
-                    console.error('Error al decodificar la ruleta desde la URL:', error);
-                }
-            }
-            
-            if (!optionsLoaded) {
-                optionsLoaded = loadWheelFromLocalStorage();
-            }
-    
-            if (isSetupMode) {
-                document.body.style.backgroundColor = '#1a1a2e';
-                showScreen('home');
-            } else {
-                document.body.style.backgroundColor = 'transparent';
-                const gameUI = document.getElementById('gameUI');
-                const setupMessage = document.getElementById('setupMessage');
-                if (optionsLoaded) {
-                    gameUI.style.display = 'flex';
-                    setupMessage.style.display = 'none';
-                    donorNameDisplay.textContent = 'Esperando donación...';
-                } else {
-                    gameUI.style.display = 'none';
-                    setupMessage.style.display = 'block';
-                }
-                showScreen('play');
-                document.getElementById('spinBtn').style.display = 'none';
-                buttons.backToHomeFromPlayBtn.style.display = 'none';
-            }
-            connectWebSocket();
-        }
-    
-        // Inicia la aplicación solo cuando el DOM esté completamente cargado
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    
-    </script>
+      }catch(err){
+        console.warn('[WS] no-JSON o formato inesperado:', raw, err);
+      }
+    };
+  }
+  openWS();
+</script>
 </body>
 </html>
