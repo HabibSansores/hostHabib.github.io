@@ -373,7 +373,7 @@
   // ===== WebSocket TikFinity =====
   function getWSUrl(){
     const u = new URL(window.location.href);
-    return u.searchParams.get('ws') || 'ws://192.168.1.69:21213/';
+    return u.searchParams.get('ws') || 'ws://localhost:21213/';
   }
 
   function openWS(){
@@ -416,4 +416,5 @@
 </script>
 </body>
 </html>
+
 
