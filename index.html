@@ -111,18 +111,15 @@
 
 <script>
   // ===== CONFIG =====
-  const PROBABILIDADES={nada:1.0,casi:0,win:0};
-  const PROBABILIDADES={nada:1.0,casi:0,win:0}; // ajusta si quieres otras probabilidades
-  const BASE_MS=15000, MS_POR_SLOT=0, COPIAS=15;
+  const PROBABILIDADES = { nada: 1.0, casi: 0, win: 0 }; // Ajusta a tu gusto
+  const BASE_MS = 15000, MS_POR_SLOT = 0, COPIAS = 15;
   const CENTER_NUDGE_PX = 0;
 
-  const COINS_PER_SPIN = 10;   // 30 monedas = 1 giro
-  const COUNT_PER_SPIN = 0;
-  const ONLY_ON_STREAK_END = true; // no exigir fin de racha
-  // ✅ Contar solo cuando finaliza la racha (evita giros dobles)
-  const ONLY_ON_STREAK_END = true;
+  const COINS_PER_SPIN = 30;   // 30 monedas = 1 giro
+  const COUNT_PER_SPIN = 0;    // alternativa si quieres contar por "count"
+  const ONLY_ON_STREAK_END = true; // contar solo al finalizar racha (evita giros dobles)
 
-  // Variantes de rosquilla
+  // Variantes de rosquilla (mapeo por nombre -> monedas)
   const GIFT_VALUES = {
     "rosquilla": 30, "rosquillas": 30,
     "dona": 30, "donas": 30,
@@ -130,30 +127,30 @@
   };
 
   // ===== Estado =====
-  let ws=null, spinning=false;
-  let pendingSpins=0;
-  let spinQueue=[];
-  const statusEl=document.getElementById('status');
-  const btn=document.getElementById('btn');
-  const viewport=document.getElementById('viewport');
-  const carril=document.getElementById('carril');
-  const toast=document.getElementById('toast');
-  const gifterBadge=document.getElementById('gifterBadge');
-  let baseCount=0,middleBlock=0,currentAbs=0,ITEM_W=150,STEP_W=162;
-  let hideBadgeTimer=null;
+  let ws = null, spinning = false;
+  let pendingSpins = 0;
+  let spinQueue = [];
+  const statusEl = document.getElementById('status');
+  const btn = document.getElementById('btn');
+  const viewport = document.getElementById('viewport');
+  const carril = document.getElementById('carril');
+  const toast = document.getElementById('toast');
+  const gifterBadge = document.getElementById('gifterBadge');
+  let baseCount = 0, middleBlock = 0, currentAbs = 0, ITEM_W = 150, STEP_W = 162;
+  let hideBadgeTimer = null;
   let CURRENT_TX = 0;
 
   // ===== Layout =====
   function measureSizes(){
-    const prev=carril.style.transform;
-    carril.classList.remove('anim'); carril.style.transform='translateX(0px)';
-    const items=carril.querySelectorAll('.item');
-    if(items.length>=2){
-      const r1=items[0].getBoundingClientRect();
-      const r2=items[1].getBoundingClientRect();
-      ITEM_W=r1.width; STEP_W=r2.left-r1.left;
+    const prev = carril.style.transform;
+    carril.classList.remove('anim'); carril.style.transform = 'translateX(0px)';
+    const items = carril.querySelectorAll('.item');
+    if(items.length >= 2){
+      const r1 = items[0].getBoundingClientRect();
+      const r2 = items[1].getBoundingClientRect();
+      ITEM_W = r1.width; STEP_W = r2.left - r1.left;
     }
-    requestAnimationFrame(()=>{ carril.style.transform=prev||'translateX(0px)'; });
+    requestAnimationFrame(()=>{ carril.style.transform = prev || 'translateX(0px)'; });
   }
   function setTransform(tx, smooth=false, durMs=BASE_MS){
     if(smooth){ carril.style.setProperty('--dur', `${Math.max(50, Math.round(durMs))}ms`); carril.classList.add('anim'); }
@@ -161,15 +158,15 @@
     CURRENT_TX = tx;
     carril.style.transform = `translateX(${tx}px)`;
   }
-  function renderTo(absIndex,smooth=true,durMs=BASE_MS){
-    const rect=viewport.getBoundingClientRect();
-    const center=(rect.width/2)-(ITEM_W/2);
-    const tx=-(absIndex*STEP_W)+center;
+  function renderTo(absIndex, smooth=true, durMs=BASE_MS){
+    const rect = viewport.getBoundingClientRect();
+    const center = (rect.width/2) - (ITEM_W/2);
+    const tx = -(absIndex * STEP_W) + center;
     setTransform(tx, smooth, durMs);
-    currentAbs=absIndex;
+    currentAbs = absIndex;
   }
-  function mod(n,m){return((n%m)+m)%m;}
-  function recenter(absIndex){ const rel=mod(absIndex,baseCount); renderTo(middleBlock*baseCount+rel,false); }
+  function mod(n,m){ return ((n % m) + m) % m; }
+  function recenter(absIndex){ const rel = mod(absIndex, baseCount); renderTo(middleBlock*baseCount + rel, false); }
 
   // ===== Probabilidades =====
   function getWeightedRandomIndex() {
@@ -189,20 +186,25 @@
     }
     if (sum <= 0) {
       for (const k of ORDER) if (buckets[k].length) {
-        const b=buckets[k]; return b[Math.floor(Math.random()*b.length)];
+        const b = buckets[k]; return b[Math.floor(Math.random()*b.length)];
       }
       return 0;
     }
-    const r=Math.random(); let acc=0;
-    for (const k of ORDER) { acc += weights[k]/sum; if (r < acc && buckets[k].length) { const b=buckets[k]; return b[Math.floor(Math.random()*b.length)]; } }
+    const r = Math.random(); let acc = 0;
+    for (const k of ORDER) {
+      acc += weights[k]/sum;
+      if (r < acc && buckets[k].length) {
+        const b = buckets[k]; return b[Math.floor(Math.random()*b.length)];
+      }
+    }
     for (let i=ORDER.length-1;i>=0;i--){ const b=buckets[ORDER[i]]; if (b.length) return b[Math.floor(Math.random()*b.length)]; }
     return 0;
   }
 
   // ===== UI =====
-  function showToast(txt,ms=1200){ toast.textContent=txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),ms); }
-  function showBadge(txt){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); gifterBadge.textContent=`🎁 ${txt}`; gifterBadge.classList.add('show'); }
-  function hideBadgeLater(ms=800){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); hideBadgeTimer=setTimeout(()=>gifterBadge.classList.remove('show'),ms); }
+  function showToast(txt,ms=1200){ toast.textContent = txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), ms); }
+  function showBadge(txt){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); gifterBadge.textContent = `🎁 ${txt}`; gifterBadge.classList.add('show'); }
+  function hideBadgeLater(ms=800){ if(hideBadgeTimer) clearTimeout(hideBadgeTimer); hideBadgeTimer = setTimeout(()=>gifterBadge.classList.remove('show'), ms); }
   function getItemUnderMarker(){
     const rect = viewport.getBoundingClientRect();
     const x = rect.left + rect.width/2 + CENTER_NUDGE_PX;
@@ -220,7 +222,6 @@
   }
 
   // ===== Normalización =====
-  // ===== Normalización nombre de regalo =====
   function normalizeGiftKey(name){
     if(!name) return "";
     const k = String(name).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -231,15 +232,14 @@
   }
   function inferCoinsFromName(name, count=1) {
     const key = normalizeGiftKey(name);
-    const candidates = [key, key.endsWith('s') ? key.slice(0,-1) : key+'s'];
-    for (const c of candidates){ if (GIFT_VALUES[c] != null) return GIFT_VALUES[c] * Math.max(1, count); }
+    const variants = [key, key.endsWith('s') ? key.slice(0,-1) : key+'s'];
+    for (const v of variants){ if (GIFT_VALUES[v] != null) return GIFT_VALUES[v] * Math.max(1, count); }
     return 0;
   }
 
   // ===== DEDUPE (anti-duplicados) =====
   const DEDUPE_TTL_MS = 3000;
   const dedupeCache = new Map();
-
   function makeGiftKey(data) {
     const uid = data.uniqueId || data.userId || data.user || 'anon';
     const giftId = data.giftId || data.gift?.id || data.giftName || data.gift || 'gift';
@@ -249,13 +249,10 @@
     const msgId = data.messageId || data.id || '';
     return `${msgId}|${uid}|${giftId}|${rep}|${diamonds}|end:${end}`;
   }
-
   function isDuplicateGift(data){
     const key = makeGiftKey(data);
     const now = Date.now();
-    for (const [k, t] of dedupeCache) {
-      if (now - t > DEDUPE_TTL_MS) dedupeCache.delete(k);
-    }
+    for (const [k, t] of dedupeCache) if (now - t > DEDUPE_TTL_MS) dedupeCache.delete(k);
     const last = dedupeCache.get(key);
     if (last && (now - last) < DEDUPE_TTL_MS) return true;
     dedupeCache.set(key, now);
@@ -264,7 +261,7 @@
 
   // ===== Conteo de giros desde datos TikFinity =====
   function parseCoinsFromObj(obj){
-    const fields = ['diamondCount','diamonds','value','coins','coin','giftCoins','giftValue'];
+    const fields = ['coins','coin','value','diamonds','diamond','giftCoins','gift_coins','giftValue','gift_value','diamondCount'];
     for (const f of fields){
       const v = Number(obj?.[f]);
       if (Number.isFinite(v) && v > 0) return v;
@@ -275,79 +272,67 @@
   function spinsFromGiftData(data){
     const giftName = data.giftName ?? data.gift ?? data.name ?? '';
     const username = data.uniqueId ?? data.nickname ?? data.user ?? data.username ?? 'Anónimo';
+    const count = Number(data.repeatCount ?? data.count ?? data.quantity ?? data.comboCount ?? data.combo_count ?? 1) || 1;
 
-    const finalCount = Number(
-      data.repeatCount ?? data.comboCount ?? data.count ?? data.quantity ?? 1
-    ) || 1;
+    const hasFlags = ('repeatEnd' in data) || ('streakEnd' in data) || ('comboEnd' in data) || ('isCompleted' in data);
+    const isEnd = Boolean(data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted ?? false);
 
+    // anti-duplicados
+    if (isDuplicateGift(data)) return {spins:0, user:username, giftName};
+
+    // si pediste contar solo al final de racha y hay flags pero aún no termina, no contar
+    if (ONLY_ON_STREAK_END && hasFlags && !isEnd) return {spins:0, user:username, giftName};
+
+    // monedas directas
     const coinsDirect =
       parseCoinsFromObj(data) ||
       parseCoinsFromObj(data.gift) ||
       NaN;
-
-    const hasStreakFlag = (
-      'repeatEnd' in data || 'streakEnd' in data || 'comboEnd' in data || 'isCompleted' in data
-    );
-    const isStreakEnd = Boolean(
-      data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted ?? false
-    );
-
-    // Anti-duplicados
-    if (isDuplicateGift(data)) return {spins:0, user:username, giftName};
-
-    // Contar SOLO al final si existen flags de racha
-    if (ONLY_ON_STREAK_END && hasStreakFlag) {
-      if (!isStreakEnd) return {spins:0, user:username, giftName};
-      if (Number.isFinite(coinsDirect) && coinsDirect > 0) {
-        return {spins: Math.max(0, Math.floor(coinsDirect / COINS_PER_SPIN)), user: username, giftName};
-      }
-      const inferred = inferCoinsFromName(giftName, Math.max(1, finalCount));
-      return {spins: Math.max(0, Math.floor(inferred / COINS_PER_SPIN)), user: username, giftName};
-    }
-
-    // Si no hay flags, procesar evento individual
-    if (Number.isFinite(coinsDirect) && coinsDirect > 0) {
+    if (Number.isFinite(coinsDirect) && coinsDirect > 0){
       return {spins: Math.max(0, Math.floor(coinsDirect / COINS_PER_SPIN)), user: username, giftName};
     }
-    const inferred = inferCoinsFromName(giftName, Math.max(1, finalCount));
-    if (inferred > 0) {
+
+    // inferencia por nombre * cantidad (rosquillas)
+    const inferred = inferCoinsFromName(giftName, Math.max(1, count));
+    if (inferred > 0){
       return {spins: Math.max(0, Math.floor(inferred / COINS_PER_SPIN)), user: username, giftName};
     }
 
-    if (COUNT_PER_SPIN > 0 && finalCount > 0) {
-      return {spins: finalCount * COUNT_PER_SPIN, user: username, giftName};
+    // último recurso: por conteo si lo activas
+    if (COUNT_PER_SPIN > 0 && count > 0){
+      return {spins: count * COUNT_PER_SPIN, user: username, giftName};
     }
+
     return {spins:0, user:username, giftName};
   }
 
   // ===== Giro =====
   function spinOnce(){
-    if(spinning){return;}
-    spinning=true;
+    if(spinning) return;
+    spinning = true;
     const currentSpinner = spinQueue.shift() || 'Anónimo';
     pendingSpins = Math.max(0, pendingSpins - 1);
     showBadge(currentSpinner);
 
-    const idxRel=getWeightedRandomIndex();
-    const vueltas=2+Math.floor(Math.random()*2);
-    const pasos=vueltas*baseCount+idxRel;
-    const durMs=BASE_MS+pasos*MS_POR_SLOT;
-    const targetAbs=currentAbs+pasos;
+    const idxRel = getWeightedRandomIndex();
+    const vueltas = 2 + Math.floor(Math.random()*2);
+    const pasos = vueltas*baseCount + idxRel;
+    const durMs = BASE_MS + pasos*MS_POR_SLOT;
+    const targetAbs = currentAbs + pasos;
 
-    renderTo(targetAbs,true,durMs);
+    renderTo(targetAbs, true, durMs);
 
-    const onEnd=()=>{
-      carril.removeEventListener('transitionend',onEnd);
+    const onEnd = () => {
       recenter(targetAbs);
       const elCentro = getItemUnderMarker();
       snapCenterOnElement(elCentro);
       const premio = elCentro ? elCentro.innerText.trim().replace(/\s+/g,' ') : '(?)';
-      showToast('Premio: '+premio);
+      showToast('Premio: ' + premio);
       hideBadgeLater(600);
-      spinning=false;
+      spinning = false;
       if (pendingSpins > 0) setTimeout(spinOnce, 300);
     };
-    carril.addEventListener('transitionend',onEnd,{once:true});
+    carril.addEventListener('transitionend', onEnd, {once:true});
   }
 
   function queueSpins(n, user){
@@ -360,75 +345,26 @@
     if (!spinning) spinOnce();
   }
 
-  // ===== Parseo TikFinity Event API =====
-  function parseCoinsFromObj(obj){
-    const fields = ['coins','coin','value','diamonds','diamond','giftCoins','gift_coins','giftValue','gift_value','diamondCount'];
-    for (const f of fields){
-      const v = Number(obj?.[f]);
-      if (Number.isFinite(v) && v > 0) return v;
-    }
-    return NaN;
-  }
-
-  function spinsFromGiftData(data){
-    // data puede venir tal cual del conector
-    const giftName = data.giftName ?? data.gift ?? data.name ?? '';
-    const username = data.uniqueId ?? data.nickname ?? data.user ?? data.username ?? 'Anónimo';
-
-    const count = Number(
-      data.repeatCount ?? data.count ?? data.quantity ?? data.comboCount ?? data.combo_count ?? 1
-    ) || 1;
-
-    const coinsDirect = parseCoinsFromObj(data) || parseCoinsFromObj(data.gift) || NaN;
-
-    // Flags de racha (no los exigimos)
-    const isStreakEnd = Boolean(
-      data.repeatEnd ?? data.streakEnd ?? data.comboEnd ?? data.isCompleted ?? false
-    );
-
-    // 1) Si hay monedas totales (diamonds/coins)
-    if (Number.isFinite(coinsDirect) && coinsDirect > 0){
-      const spins = Math.floor(coinsDirect / COINS_PER_SPIN);
-      return {spins: Math.max(0, spins), user: username, giftName};
-    }
-
-    // 2) Inferir por nombre * cantidad (rosquillas)
-    const inferred = inferCoinsFromName(giftName, Math.max(1, count));
-    if (inferred > 0){
-      const spins = Math.floor(inferred / COINS_PER_SPIN);
-      return {spins: Math.max(0, spins), user: username, giftName};
-    }
-
-    // 3) Recurso final por conteo si configuras COUNT_PER_SPIN
-    if (COUNT_PER_SPIN > 0 && count > 0){
-      if (ONLY_ON_STREAK_END && !isStreakEnd) return {spins:0, user:username, giftName};
-      return {spins: count * COUNT_PER_SPIN, user: username, giftName};
-    }
-
-    return {spins:0, user:username, giftName};
-  }
-
   // ===== Init =====
   (function init(){
-    const baseHTML=carril.innerHTML;
-    baseCount=carril.children.length;
-    for(let i=1;i<COPIAS;i++) carril.insertAdjacentHTML('beforeend',baseHTML);
-    middleBlock=Math.floor(COPIAS/2);
+    const baseHTML = carril.innerHTML;
+    baseCount = carril.children.length;
+    for(let i=1;i<COPIAS;i++) carril.insertAdjacentHTML('beforeend', baseHTML);
+    middleBlock = Math.floor(COPIAS/2);
     measureSizes();
-    currentAbs=middleBlock*baseCount+Math.floor(baseCount/2);
-    renderTo(currentAbs,false);
-    window.addEventListener('resize',()=>{measureSizes();renderTo(currentAbs,false);});
+    currentAbs = middleBlock*baseCount + Math.floor(baseCount/2);
+    renderTo(currentAbs, false);
+    window.addEventListener('resize', ()=>{ measureSizes(); renderTo(currentAbs, false); });
   })();
 
   btn.addEventListener('click', () => { if (!spinning && pendingSpins===0) queueSpins(1, 'Tester'); });
 
-  // Tecla T = simular 15 rosquillas (450 monedas = 15/30 = 15 giros)
+  // Tecla T = simular 15 rosquillas -> 450 monedas -> 15 giros con COINS_PER_SPIN=30
   window.addEventListener('keydown', (e)=>{
     if(e.key.toLowerCase()==='t'){
       const sim = { event:'gift', data:{ giftName:'Rosquillas', repeatCount:15, diamondCount: 450, repeatEnd:true } };
-      console.log('[SIM]', sim);
       const {spins,user,giftName} = spinsFromGiftData(sim.data);
-      console.log(`[SIM] ${giftName} -> spins: ${spins}`);
+      console.log(`[SIM] ${giftName || '(sin nombre)'} -> spins: ${spins}`);
       if (spins > 0) queueSpins(spins, user || 'Tester');
       else showToast('Simulación sin giros', 1200);
     }
@@ -437,7 +373,7 @@
   // ===== WebSocket TikFinity =====
   function getWSUrl(){
     const u = new URL(window.location.href);
-    return u.searchParams.get('ws') || 'ws://localhost:21213/';
+    return u.searchParams.get('ws') || 'ws://192.168.1.69:21213/';
   }
 
   function openWS(){
@@ -446,24 +382,29 @@
     try{ ws = new WebSocket(url); }
     catch(e){ statusEl.textContent='WS: error URL'; statusEl.classList.add('err'); return; }
 
-    ws.onopen = () => { statusEl.textContent=`WS: conectado`; statusEl.classList.add('ok'); statusEl.classList.remove('err'); };
-    ws.onclose = () => { statusEl.textContent='WS: desconectado'; statusEl.classList.remove('ok'); setTimeout(openWS, 1000); };
-    ws.onerror = (e) => { console.warn('[WS] error', e); statusEl.textContent='WS: error'; statusEl.classList.add('err'); };
+    ws.onopen = () => {
+      statusEl.textContent='WS: conectado';
+      statusEl.classList.add('ok'); statusEl.classList.remove('err');
+    };
+    ws.onclose = () => {
+      statusEl.textContent='WS: desconectado';
+      statusEl.classList.remove('ok');
+      setTimeout(openWS, 1000);
+    };
+    ws.onerror = (e) => {
+      console.warn('[WS] error', e);
+      statusEl.textContent='WS: error'; statusEl.classList.add('err');
+    };
 
     ws.onmessage = (ev) => {
       let raw = ev.data;
       try{
         const msg = JSON.parse(raw);
-        // Formato TikFinity Event API: { event: "gift" | "chat" | ... , data: {...} }
         const evt = msg.event;
         const data = msg.data || {};
-        // Log básico
-        console.log('[WS] evento:', evt, data);
-
         if (evt === 'gift'){
           const {spins, user, giftName} = spinsFromGiftData(data);
           console.log(`[WS] gift ${giftName || '(sin nombre)'} -> spins: ${spins}`);
-          console.log(`[WS] gift ${giftName || '(?)'} -> spins: ${spins}`);
           if (spins > 0) queueSpins(spins, user);
         }
       }catch(err){
